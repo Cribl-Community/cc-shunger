@@ -1,4 +1,5 @@
-// The blueprint-demo Worker Group: deliberately broken config that trips every lint rule.
+// The demo Worker Group (the `default` group of a spare demo workspace): deliberately broken
+// config that trips every lint rule.
 // Used by the dev-only seeder (src/dev/DemoSeeder.tsx) and by lint tests as the "bad" fixture.
 // Everything is fake: example.com hosts, FAKE tokens, Datagen sources only.
 
@@ -9,8 +10,6 @@ export interface DemoSeed {
   inputs: Record<string, unknown>[];
   routes: Record<string, unknown>[];
 }
-
-export const DEMO_GROUP_PREFIX = 'blueprint-';
 
 /** Which seeded object should trip which rule (mirrors BUILD_PLAN.md "Seeded demo Worker Group"). */
 export const EXPECTED_FINDINGS = [

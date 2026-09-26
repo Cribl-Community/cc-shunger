@@ -27,7 +27,7 @@ The entry must be submitted complete by **1:30 pm CDT, Wednesday September 30, 2
 | Meaningful use of a Cribl API, KV store, backend function, or proxy host | Cribl config APIs (read and write) plus KV for snapshots and suppressions |
 | Public repo under github.com/Cribl-Community | Request org access now; it is outside your control |
 | Apache-2.0 LICENSE file; all bundled code license-compatible | Check every dependency's license in Phase 1 |
-| Versioned `.tgz` committed or attached to a release | Build script outputs `cribl-blueprint-X.Y.Z.tgz` |
+| Versioned `.tgz` committed or attached to a release | `npm run package` outputs `build/cc-blueprint-X.Y.Z.tgz` |
 | README covers what it does, install, Cribl APIs used, proxy hosts, setup | Write it as you go, not on the last day |
 | No real customer data, PII, production hostnames, or live credentials | Demo config uses `example.com` hosts and Datagen sources only |
 | Any secret in KV must use KV encryption | Blueprint stores no secrets; say so in the README |
@@ -173,7 +173,7 @@ Testing runs at three levels: offline unit tests on fixtures, a seeded demo Work
 
 ### 2. Seeded demo Worker Group (build in Phase 2)
 
-Create a Worker Group named `blueprint-demo` using only Datagen sources and devnull or dummy destinations. Seed it with these deliberate problems:
+Extra Worker Groups need Cribl Enterprise, so the demo uses the `default` group of a **spare free Cribl.Cloud workspace**, seeded from `demo/seed.ts` by the dev-only seeder (see `demo/SEED.md`). Steve's lab workspace is never seeded. Seed it with these deliberate problems:
 
 | Seeded problem | Should trigger |
 | --- | --- |
@@ -187,7 +187,7 @@ Create a Worker Group named `blueprint-demo` using only Datagen sources and devn
 | Eval function setting a field to a fake `token=FAKE...` literal | L07 |
 | Regex Extract starting with `.*` | L08 |
 
-Save the seed steps as `demo/SEED.md` (manual steps or an export of the group's config) so the demo can be rebuilt. Also keep one clean group with zero findings to prove the linter isn't noisy.
+The seed steps are in `demo/SEED.md`, so the demo can be rebuilt. The "no noise" check is the demo workspace's `default` group captured *before* seeding (`test/fixtures/workspace-clean.json`). It must produce zero findings in a unit test.
 
 ### 3. Manual checks at each gate
 
@@ -199,19 +199,19 @@ Save the seed steps as `demo/SEED.md` (manual steps or an export of the group's 
 
 ### 4. Clean install test (Phase 5, required)
 
-1. Apps install per workspace, so delete Blueprint from the workspace first. That also deletes its KV data. A second workspace is better if one is available.
+1. Apps install per workspace. Use the demo workspace, which has only ever run Live Preview, never an installed package. Otherwise delete Blueprint first, which also deletes its KV data.
 2. Install the exact `.tgz` from the GitHub release, following only the README.
 3. Walk through the demo script end to end.
 4. Any manual step you had to take goes into the README or gets fixed. Repeat until none remain.
 
 ## Demo script and submission
 
-The demo runs about three minutes on `blueprint-demo` and should land one idea: Blueprint finds real problems a busy admin would miss, then documents the fix.
+The demo runs about three minutes on the demo workspace's `default` group and should land one idea: Blueprint finds real problems a busy admin would miss, then documents the fix.
 
 ### Demo script
 
 1. **Hook (20 s):** "You inherit a Cribl deployment. What is actually running, and what is broken?" Open Blueprint inside the Cribl UI.
-2. **As-Built (40 s):** pick `blueprint-demo`, show the flow diagram, then export the Markdown report. "That's the as-built doc consultants usually write by hand."
+2. **As-Built (40 s):** open the demo workspace's `default` group, show the flow diagram, then export the Markdown report. "That's the as-built doc consultants usually write by hand."
 3. **Take a snapshot (10 s):** label it "before".
 4. **Linter (60 s):** show the error count. Open L01: route 2 swallows everything, so routes 3–5 never run. Show L07's masked fake token.
 5. **Fix (30 s):** apply the L01 fix-it with preview and confirm. If fix-its were cut, make the change by hand in Routes instead.

@@ -40,7 +40,9 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - Unreferenced pipelines and destinations are drawn dashed. This is a visual preview of L03/L04 from the same reference graph. Destinations are never marked unreferenced when any enabled route uses an output expression.
 - Markdown export embeds a Mermaid flowchart, so the handoff doc renders on GitHub, GitLab and Confluence. Table cells escape only `|`, because other backslash escapes would corrupt regex filters inside code spans.
 - Cribl version isn't in the report: `/system/info` was dropped from policies, and `/master/groups` doesn't carry it. Revisit if judges ask.
-- Demo config is code (`demo/seed.ts`), seeded by a dev-only tool that refuses any group not prefixed `blueprint-`. The same data is the "bad" test fixture.
+- Demo config is code (`demo/seed.ts`). The same data is the "bad" test fixture.
+- Extra Worker Groups need Cribl Enterprise (Steve's lab has only `default`), so the demo target is the `default` group of a spare free workspace. That workspace also provides the clean fixture (captured before seeding) and the clean-install test.
+- The seeder guard is content-based, not name-based, since every workspace has a `default` group. It shows the workspace host, and if the Routing table holds routes the seed doesn't own, it requires typing that host to proceed.
 
 ## Tooling
 

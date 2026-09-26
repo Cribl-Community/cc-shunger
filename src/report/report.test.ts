@@ -102,7 +102,7 @@ describe('markdown', () => {
   });
 });
 
-describe('blueprint-demo seed', () => {
+describe('demo seed', () => {
   const inv = normalize(demoRaw());
   const graph = buildGraph(inv);
 

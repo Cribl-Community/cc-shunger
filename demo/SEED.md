@@ -1,25 +1,27 @@
-# Seeding the `blueprint-demo` Worker Group
+# Seeding the demo Worker Group
 
-The demo group holds deliberately broken config that trips every Blueprint lint rule. The definition lives in [`seed.ts`](./seed.ts). The same data is the "bad" fixture in the unit tests, so the demo and the tests can't drift apart.
+Only Cribl Enterprise can create extra Worker Groups, so the demo lives in the `default` group of a **separate, spare Cribl.Cloud workspace** (a free org). Steve's lab workspace is never seeded.
 
-Everything in it is fake: `example.com` hosts, `FAKE` tokens, and Datagen sources only.
+The definition lives in [`seed.ts`](./seed.ts). The same data is the "bad" fixture in the unit tests, so the demo and the tests can't drift apart. Everything in it is fake: `example.com` hosts, `FAKE` tokens, and Datagen sources only.
 
-## 1. Create the group (Cribl UI, once)
+## 1. Set up the demo workspace (once)
 
-1. In Cribl Stream, open **Worker Groups** and add a group with ID `blueprint-demo`.
-2. No Workers are needed. Blueprint reads and writes config through the Leader API, so an unprovisioned group is enough. Check your Cribl.Cloud plan for any per-group cost before provisioning Workers.
-
-For the "no noise" check, also create `blueprint-clean` and leave it at its defaults. It should produce zero findings. Its Default route does go to devnull, but L02 only fires when other routes sit above the catch-all.
+1. Sign up for a free Cribl.Cloud org with a different email and open its Stream workspace.
+2. **Capture the "clean" fixture before seeding.** A fresh `default` group is the zero-findings check.
+   1. Run Live Preview there (step 2, items 1–2).
+   2. Open **Show dev tools** and click **Download raw config**.
+   3. Hand the file to Claude, who sanitizes it into `test/fixtures/workspace-clean.json`.
 
 ## 2. Seed it (Blueprint Live Preview)
 
-1. Run `npm run dev` and open the app in **Live Preview**.
-2. Pick `blueprint-demo` in the Worker Group picker.
-3. Click **Show dev tools**, then **Seed blueprint-demo**, then **Confirm**.
+1. In the demo workspace, open **Apps > Create App**, use the App ID `cc-blueprint`, and start **Live Preview**.
+2. Restart `npm run dev` first if it was last used with another workspace or org.
+3. Pick `default`, click **Show dev tools**, then **Seed default**, then **Confirm**.
 
 The seeder:
 
-- Refuses any group whose ID doesn't start with `blueprint-`.
+- Shows the workspace host so you can see which workspace you are about to change.
+- Checks the Routing table first. If it has any route the seed doesn't own (i.e. real config), it shows a red warning and makes you type the workspace host to continue. On a fresh workspace, only the Default route exists, so no typing is needed.
 - Reads the group's available Datagen samples instead of assuming file names.
 - Creates or overwrites 6 pipelines, 3 destinations, and 4 sources, then replaces the whole Routing table.
 - Does not commit or deploy. Commit in Cribl if you want a clean "before" state for the demo.

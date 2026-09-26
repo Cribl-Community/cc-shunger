@@ -5,7 +5,7 @@ import Phase0Probe from './Phase0Probe';
 export default function DevTools({ group }: { group: string | null }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {group && <DemoSeeder group={group} />}
+      {group && <DemoSeeder key={group} group={group} />}
       <Phase0Probe />
     </div>
   );
