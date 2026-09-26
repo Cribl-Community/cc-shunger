@@ -34,6 +34,14 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - A route can point at a destination that doesn't exist (lab has `output: "false"`). A cheap "dangling reference" rule is possible, but Config Quest already has `dangling-route`; not planned.
 - No QuickConnect `connections` in the lab workspace; the demo group must seed one to test that path.
 
+## As-Built (Phase 2)
+
+- Flow diagram is hand-rolled SVG (no library): 4 columns, with Sources feeding a vertical "routing bus" instead of N×M source→route edges. QuickConnect is drawn as dotted edges that skip the Routes column. Pipeline→Destination edges are de-duplicated per pair, and hovering a node traces the flows through it.
+- Unreferenced pipelines and destinations are drawn dashed. This is a visual preview of L03/L04 from the same reference graph. Destinations are never marked unreferenced when any enabled route uses an output expression.
+- Markdown export embeds a Mermaid flowchart, so the handoff doc renders on GitHub, GitLab and Confluence. Table cells escape only `|`, because other backslash escapes would corrupt regex filters inside code spans.
+- Cribl version isn't in the report: `/system/info` was dropped from policies, and `/master/groups` doesn't carry it. Revisit if judges ask.
+- Demo config is code (`demo/seed.ts`), seeded by a dev-only tool that refuses any group not prefixed `blueprint-`. The same data is the "bad" test fixture.
+
 ## Tooling
 
 - Worker Groups come from `GET /master/groups?product=stream&fields=git.localChanges`. The same call returns the uncommitted-change count for the banner, so `/version/status` isn't needed.

@@ -1223,7 +1223,7 @@
       }
     }
   ],
-  "system/inputs": [
+  "inputs": [
     {
       "id": "CriblMetrics",
       "disabled": false,
@@ -1684,7 +1684,7 @@
       }
     }
   ],
-  "system/outputs": [
+  "outputs": [
     {
       "id": "default",
       "type": "default",

@@ -1,0 +1,232 @@
+// Pure layout for the As-Built flow diagram: four columns, left to right.
+//   Sources | Routes (in evaluation order) | Pipelines | Destinations
+// Sources that use the Routing table join a vertical "bus" in front of the Routes column instead
+// of drawing N x M edges. QuickConnect sources skip the Routes column and go straight to a Pipeline.
+import type { ReferenceGraph } from '../model/graph';
+import type { Inventory } from '../model/types';
+
+export const NODE_W = 200;
+export const NODE_H = 28;
+export const ROW_GAP = 8;
+export const COL_GAP = 96;
+export const PAD = 24;
+export const HEADER_H = 28;
+
+export type Column = 'source' | 'route' | 'pipeline' | 'destination';
+
+export interface LayoutNode {
+  key: string;
+  column: Column;
+  id: string;
+  label: string;
+  sublabel?: string;
+  x: number;
+  y: number;
+  disabled: boolean;
+  /** Referenced by nothing (drawn dimmed/dashed so orphans stand out). */
+  unreferenced: boolean;
+}
+
+export interface LayoutEdge {
+  key: string;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  kind: 'bus' | 'route' | 'quickconnect';
+  /** Route or QuickConnect source ids this edge carries, for hover highlighting. */
+  flows: string[];
+  disabled: boolean;
+}
+
+export interface FlowLayout {
+  width: number;
+  height: number;
+  columns: { column: Column; title: string; x: number }[];
+  nodes: LayoutNode[];
+  edges: LayoutEdge[];
+  bus?: { x: number; y1: number; y2: number };
+}
+
+const colX = (i: number) => PAD + i * (NODE_W + COL_GAP);
+const rowY = (i: number) => PAD + HEADER_H + i * (NODE_H + ROW_GAP);
+const mid = (n: LayoutNode) => n.y + NODE_H / 2;
+
+export function layoutFlow(inv: Inventory, graph: ReferenceGraph): FlowLayout {
+  const nodes: LayoutNode[] = [];
+  const index = new Map<string, LayoutNode>();
+  const add = (n: Omit<LayoutNode, 'x' | 'y'>, col: number, row: number) => {
+    const node = { ...n, x: colX(col), y: rowY(row) };
+    nodes.push(node);
+    index.set(node.key, node);
+    return node;
+  };
+
+  // Sources: routed ones first (they share the bus), then QuickConnect, then disabled.
+  const sources = [...inv.sources].sort(
+    (a, b) =>
+      Number(a.disabled) - Number(b.disabled) ||
+      Number(!a.sendToRoutes) - Number(!b.sendToRoutes) ||
+      a.id.localeCompare(b.id),
+  );
+  sources.forEach((s, i) =>
+    add(
+      {
+        key: `source:${s.id}`,
+        column: 'source',
+        id: s.id,
+        label: s.id,
+        sublabel: s.sendToRoutes ? s.type : `${s.type} · QuickConnect`,
+        disabled: s.disabled,
+        unreferenced: false,
+      },
+      0,
+      i,
+    ),
+  );
+
+  inv.routes.forEach((r) =>
+    add(
+      {
+        key: `route:${r.id}`,
+        column: 'route',
+        id: r.id,
+        label: `${r.index + 1}. ${r.name}`,
+        sublabel: r.final ? 'Final' : 'non-Final (clones)',
+        disabled: r.disabled,
+        unreferenced: false,
+      },
+      1,
+      r.index,
+    ),
+  );
+
+  // Pipelines and destinations in first-use order along the flows, then unreferenced ones last.
+  const order = (ids: string[], all: string[]) => [...new Set([...ids, ...all])];
+  const pipelineIds = order(
+    graph.flows.map((f) => f.pipeline),
+    inv.pipelines.filter((p) => !p.packId).map((p) => p.id),
+  );
+  pipelineIds.forEach((id, i) => {
+    const pipe = inv.pipelines.find((p) => p.id === id);
+    const fnCount = pipe?.functions.length ?? 0;
+    add(
+      {
+        key: `pipeline:${id}`,
+        column: 'pipeline',
+        id,
+        label: pipe?.packId ? `Pack: ${pipe.packId}` : id,
+        sublabel: pipe ? (pipe.packId ? 'pack' : `${fnCount} function${fnCount === 1 ? '' : 's'}`) : 'missing',
+        disabled: false,
+        unreferenced: !graph.pipelineRefs.has(id),
+      },
+      2,
+      i,
+    );
+  });
+
+  const destIds = order(
+    graph.flows.flatMap((f) => (f.output ? [f.output] : [])),
+    inv.destinations.map((d) => d.id),
+  );
+  destIds.forEach((id, i) => {
+    const dest = inv.destinations.find((d) => d.id === id);
+    const resolved = graph.resolveDestination(id);
+    add(
+      {
+        key: `destination:${id}`,
+        column: 'destination',
+        id,
+        label: id,
+        sublabel: !dest ? 'missing' : resolved !== id ? `→ ${resolved}` : dest.type,
+        disabled: dest?.disabled ?? false,
+        unreferenced: !!dest && !graph.destinationRefs.has(id) && !graph.hasDynamicOutputs,
+      },
+      3,
+      i,
+    );
+  });
+
+  const edges: LayoutEdge[] = [];
+  const routeNodes = nodes.filter((n) => n.column === 'route');
+  const busX = colX(1) - COL_GAP / 3;
+  const bus = routeNodes.length
+    ? { x: busX, y1: mid(routeNodes[0]), y2: mid(routeNodes[routeNodes.length - 1]) }
+    : undefined;
+
+  if (bus) {
+    for (const s of sources.filter((s) => s.sendToRoutes)) {
+      const n = index.get(`source:${s.id}`)!;
+      const y = Math.min(Math.max(mid(n), bus.y1), bus.y2);
+      edges.push({
+        key: `bus:${s.id}`,
+        from: { x: n.x + NODE_W, y: mid(n) },
+        to: { x: bus.x, y },
+        kind: 'bus',
+        flows: inv.routes.map((r) => r.id),
+        disabled: s.disabled,
+      });
+    }
+    for (const n of routeNodes) {
+      edges.push({
+        key: `stub:${n.id}`,
+        from: { x: bus.x, y: mid(n) },
+        to: { x: n.x, y: mid(n) },
+        kind: 'bus',
+        flows: [n.id],
+        disabled: n.disabled,
+      });
+    }
+  }
+
+  // Pipeline -> destination edges are shared by every flow that uses the pair.
+  const pairEdges = new Map<string, LayoutEdge>();
+  for (const f of graph.flows) {
+    const pipe = index.get(`pipeline:${f.pipeline}`);
+    if (!pipe) continue;
+    const start =
+      f.kind === 'route' ? index.get(`route:${f.via}`) : index.get(`source:${f.via}`);
+    if (start) {
+      edges.push({
+        key: `${f.kind}:${f.via}->${f.pipeline}`,
+        from: { x: start.x + NODE_W, y: mid(start) },
+        to: { x: pipe.x, y: mid(pipe) },
+        kind: f.kind,
+        flows: [f.via],
+        disabled: f.disabled,
+      });
+    }
+    const dest = f.output ? index.get(`destination:${f.output}`) : undefined;
+    if (!dest) continue;
+    const key = `pair:${f.pipeline}->${f.output}`;
+    const existing = pairEdges.get(key);
+    if (existing) {
+      existing.flows.push(f.via);
+      existing.disabled = existing.disabled && f.disabled;
+    } else {
+      const edge: LayoutEdge = {
+        key,
+        from: { x: pipe.x + NODE_W, y: mid(pipe) },
+        to: { x: dest.x, y: mid(dest) },
+        kind: f.kind,
+        flows: [f.via],
+        disabled: f.disabled,
+      };
+      pairEdges.set(key, edge);
+      edges.push(edge);
+    }
+  }
+
+  const rows = Math.max(sources.length, inv.routes.length, pipelineIds.length, destIds.length, 1);
+  return {
+    width: colX(3) + NODE_W + PAD,
+    height: rowY(rows) + PAD,
+    columns: [
+      { column: 'source', title: `Sources (${inv.sources.length})`, x: colX(0) },
+      { column: 'route', title: `Routes (${inv.routes.length})`, x: colX(1) },
+      { column: 'pipeline', title: 'Pipelines', x: colX(2) },
+      { column: 'destination', title: 'Destinations', x: colX(3) },
+    ],
+    nodes,
+    edges,
+    bus,
+  };
+}

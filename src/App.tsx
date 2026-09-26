@@ -1,21 +1,33 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Alert, Button, EmptyState, Spinner, Text } from '@capra/core';
+import { Alert, Button, EmptyState, Spinner, TabNav, Text } from '@capra/core';
 import { listWorkerGroups, type WorkerGroup } from './api/groups';
+import AsBuiltTab from './ui/AsBuiltTab';
 import GroupPicker from './ui/GroupPicker';
+import { useInventory } from './ui/useInventory';
 
-// Dev-only Phase 0 probe; the DEV guard lets Vite drop it from production bundles.
-const Phase0Probe = import.meta.env.DEV ? lazy(() => import('./dev/Phase0Probe')) : null;
+// Dev-only tools (demo seeder, Phase 0 probe); the DEV guard lets Vite drop them from production.
+const DevTools = import.meta.env.DEV ? lazy(() => import('./dev/DevTools')) : null;
 
 type Load =
   | { state: 'loading' }
   | { state: 'error'; message: string }
   | { state: 'ready'; groups: WorkerGroup[] };
 
+type Tab = 'asbuilt' | 'linter' | 'snapshots';
+
+const TABS = [
+  { key: 'asbuilt', name: 'As-Built' },
+  { key: 'linter', name: 'Linter' },
+  { key: 'snapshots', name: 'Snapshots' },
+];
+
 function App() {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [groupId, setGroupId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [showProbe, setShowProbe] = useState(false);
+  const [tab, setTab] = useState<Tab>('asbuilt');
+  const [showDev, setShowDev] = useState(false);
+  const [inv, reloadInventory] = useInventory(groupId);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -37,7 +49,12 @@ function App() {
       <header className="app-header">
         <Text as="h1" variant="heading">Cribl Blueprint</Text>
         {load.state === 'ready' && load.groups.length > 0 && (
-          <GroupPicker groups={load.groups} value={groupId} onChange={setGroupId} />
+          <div className="header-controls">
+            <GroupPicker groups={load.groups} value={groupId} onChange={setGroupId} />
+            <Button onClick={reloadInventory} disabled={inv.state === 'loading'}>
+              Refresh
+            </Button>
+          </div>
         )}
       </header>
 
@@ -71,18 +88,37 @@ function App() {
                 {`${group.id} has ${group.localChanges} uncommitted change${group.localChanges === 1 ? '' : 's'}. Blueprint shows the working config, including uncommitted edits.`}
               </Alert>
             )}
-            <Text>{`${group.name} · ${group.workerCount} worker${group.workerCount === 1 ? '' : 's'}`}</Text>
+
+            <TabNav aria-label="Blueprint views" items={TABS} activeKey={tab} onTabPress={(k) => setTab(k as Tab)} />
+
+            {inv.state === 'loading' && <Spinner />}
+            {inv.state === 'error' && (
+              <Alert
+                appearance="danger"
+                title={`Couldn't load config for ${inv.group}`}
+                action={{ label: 'Retry', onClick: reloadInventory }}
+              >
+                {inv.message}
+              </Alert>
+            )}
+            {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} />}
+            {inv.state === 'ready' && tab === 'linter' && (
+              <EmptyState title="Linter" description="Coming in Phase 3." />
+            )}
+            {inv.state === 'ready' && tab === 'snapshots' && (
+              <EmptyState title="Snapshots" description="Coming in Phase 4." />
+            )}
           </>
         )}
 
-        {Phase0Probe && (
+        {DevTools && (
           <div className="dev-tools">
-            <Button variant="tertiary" onClick={() => setShowProbe((s) => !s)}>
-              {showProbe ? 'Hide Phase 0 probe' : 'Show Phase 0 probe (dev only)'}
+            <Button variant="tertiary" onClick={() => setShowDev((s) => !s)}>
+              {showDev ? 'Hide dev tools' : 'Show dev tools'}
             </Button>
-            {showProbe && (
+            {showDev && (
               <Suspense fallback={<Spinner />}>
-                <Phase0Probe />
+                <DevTools group={groupId} />
               </Suspense>
             )}
           </div>

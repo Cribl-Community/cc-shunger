@@ -10,7 +10,8 @@ if (!inPath || !outPath) {
   process.exit(1);
 }
 
-const ENDPOINTS = ['routes', 'pipelines', 'system/inputs', 'system/outputs', 'packs'];
+// Raw probe key -> fixture key (matches RawConfig in src/model/types.ts).
+const ENDPOINTS = { routes: 'routes', pipelines: 'pipelines', 'system/inputs': 'inputs', 'system/outputs': 'outputs', packs: 'packs' };
 const SECRET_KEY = /(^|_)(token|password|passwd|secret|secretkey|apikey|api_key|privkey|privatekey|credentials?)$|token$|secret$|password$/i;
 const NOT_SECRET_KEY = /type$|method$|path$/i; // authType, awsAuthenticationMethod, privKeyPath
 const KEEP_HOSTS = /(^|\.)(cribl\.io|example\.com|example\.net|example\.org)$/i;
@@ -49,7 +50,7 @@ const out = {
   criblVersion: raw['system/info']?.body?.items?.[0]?.BUILD?.VERSION ?? 'unknown',
   group: raw.group,
 };
-for (const ep of ENDPOINTS) out[ep] = scrub(raw[ep]?.body?.items ?? []);
+for (const [ep, key] of Object.entries(ENDPOINTS)) out[key] = scrub(raw[ep]?.body?.items ?? []);
 
 // Belt and braces: refuse to write if anything that looks sensitive survived.
 const text = JSON.stringify(out);
