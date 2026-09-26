@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: token('spacing.lg');
+  padding: token('spacing.lg') token('spacing.xl');
+  border-bottom: 1px solid token('color.border.neutral.subtle');
+}
+
+.app-body {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.lg');
+  padding: token('spacing.xl');
+  max-width: 1200px;
+}
+
+.dev-tools {
+  margin-top: token('spacing.xl');
+  padding-top: token('spacing.lg');
+  border-top: 1px dashed token('color.border.neutral.subtle');
+}

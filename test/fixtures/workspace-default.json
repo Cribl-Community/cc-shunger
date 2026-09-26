@@ -1,0 +1,2246 @@
+{
+  "source": "Phase 0 probe of a lab workspace, sanitized by scripts/sanitize-fixtures.mjs",
+  "criblVersion": "4.20.1-590ec085",
+  "group": "default",
+  "routes": [
+    {
+      "id": "default",
+      "groups": {},
+      "comments": [],
+      "routes": [
+        {
+          "id": "XHANpj",
+          "name": "infra_metrics_digest",
+          "final": false,
+          "disabled": false,
+          "pipeline": "inframetricdigest",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "true",
+          "clones": [
+            {}
+          ],
+          "output": "infra_metrics"
+        },
+        {
+          "id": "Wml33J",
+          "name": "infra3metrics",
+          "final": false,
+          "disabled": false,
+          "pipeline": "inframetricdigest-v3",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "true",
+          "clones": [
+            {}
+          ],
+          "output": "infra3ld"
+        },
+        {
+          "id": "0e902r",
+          "name": "source_split",
+          "final": true,
+          "disabled": false,
+          "pipeline": "passthru",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "host==\"The_Gamer\"",
+          "clones": [],
+          "output": "devnull"
+        },
+        {
+          "id": "kzInxP",
+          "name": "apache_ubuntu",
+          "final": true,
+          "disabled": false,
+          "pipeline": "passthru",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "host==\"megaai\"",
+          "clones": [],
+          "output": "devnull"
+        },
+        {
+          "id": "fqwI0M",
+          "name": "Cribl_Logs",
+          "final": true,
+          "disabled": false,
+          "pipeline": "passthru",
+          "description": "",
+          "enableOutputExpression": true,
+          "outputExpression": "__outputId==\"criblvision\"",
+          "filter": "__inputId=='cribl:CriblLogs'",
+          "clones": [],
+          "output": "false"
+        },
+        {
+          "id": "bRe6Wt",
+          "name": "send test search",
+          "final": true,
+          "disabled": false,
+          "pipeline": "passthru",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "cribl_search_id.startsWith('test_search') || _raw.includes('test_search')",
+          "clones": [],
+          "output": "somedata"
+        },
+        {
+          "id": "default",
+          "name": "default",
+          "final": true,
+          "disabled": false,
+          "pipeline": "passthru",
+          "description": "",
+          "enableOutputExpression": false,
+          "filter": "true",
+          "clones": [],
+          "output": "default"
+        }
+      ]
+    }
+  ],
+  "pipelines": [
+    {
+      "id": "cisco_asa",
+      "conf": {
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "sourcetype!='cisco:asa'",
+            "conf": {},
+            "description": "Short-circuit all events that are NOT sourcetype cisco:asa",
+            "final": true
+          },
+          {
+            "id": "regex_extract",
+            "filter": "true",
+            "conf": {
+              "regex": "/ASA-\\d+-(?<__code>\\d+)/",
+              "source": "_raw"
+            },
+            "description": "Extract ASA Code"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop stub TCP|UDP|ICMP build and teardown messages."
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "[302022, 302023, 302024, 302025, 302026, 302027].indexOf(+__code) > -1",
+            "conf": {},
+            "description": "Drop stub TCP|UDP|ICMP build and teardown messages"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop ICMP messages."
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "[302020, 302021].indexOf(+__code) > -1",
+            "conf": {},
+            "description": "Drop ICMP messages."
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop TCP|UDP|ICMP messages since same information is logged in connection building/teardown."
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "[305011, 305012].indexOf(+__code) > -1",
+            "conf": {},
+            "description": "Drop TCP|UDP|ICMP messages since same information is logged in connection building/teardown."
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "1. Extract field \"action\" from ASA-6-106100 messages\n2. Sample permitted ASA-6-106100 messages at 10:1"
+            }
+          },
+          {
+            "id": "regex_extract",
+            "filter": "__code == 106100",
+            "disabled": false,
+            "conf": {
+              "regex": "/ASA-\\d+-106100:\\saccess-list\\s\\w+\\s(?<__action>\\w+)/",
+              "source": "_raw"
+            },
+            "description": "Extract field \"action\" from ASA-6-106100 messages"
+          },
+          {
+            "id": "sampling",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "rules": [
+                {
+                  "filter": "__action=='permitted'",
+                  "rate": 10
+                }
+              ]
+            },
+            "description": "Sample permitted ASA-6-106100 messages at 10:1"
+          }
+        ],
+        "output": "default",
+        "description": "Filter and Sample Cisco ASA events"
+      }
+    },
+    {
+      "id": "cisco_estreamer",
+      "conf": {
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "sourcetype!='cisco:estreamer:data'",
+            "disabled": false,
+            "conf": {},
+            "description": "Short-circuit all events that are NOT of sourcetype cisco:estreamer:data",
+            "final": true
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Use the Parser function in K=V mode to re-write original events satisfying these conditions:\n* Keep all fields enumerated in the \"Fields To Keep\", regardless of their values.\n* Remove fields with no value.\n* Remove fields with value 'N/A'.\n* Remove fields with '0', '-' or ':' only.\n* Remove fields with value '[Uu]nknown'\n"
+            }
+          },
+          {
+            "id": "serde",
+            "filter": "true",
+            "conf": {
+              "mode": "reserialize",
+              "type": "kvp",
+              "srcField": "_raw",
+              "fields": [],
+              "keep": [
+                "dest_port",
+                "dest_ip",
+                "dest_bytes",
+                "src_port",
+                "web_app",
+                "src_ip",
+                "iface_ingress",
+                "fw_rule_reason",
+                "client_app",
+                "fw_rule_action",
+                "sec_zone_ingress",
+                "src_bytes",
+                "user_agent",
+                "http_response",
+                "fw_policy",
+                "ip_proto",
+                "dest_pkts",
+                "app_proto",
+                "fw_rule",
+                "sensor"
+              ],
+              "remove": [],
+              "fieldFilterExpr": "!(value.length==0 || value=='N/A' || value.match(/^[0\\-:]+$/) || value.toLowerCase()=='unknown')"
+            },
+            "description": "Rewrite events with required fields only."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cribl_metrics_rollup",
+      "conf": {
+        "functions": [
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "This pipeline is configured by default to pre-process the CriblMetrics data (system internal metrics). The Rollup Metrics function is used to rollup all metrics to a 30s time window."
+            }
+          },
+          {
+            "id": "rollup_metrics",
+            "filter": "true",
+            "conf": {
+              "dimensions": [
+                "*"
+              ],
+              "timeWindow": "30s",
+              "gaugeRollup": "last"
+            }
+          },
+          {
+            "id": "eval",
+            "filter": "source === 'cribl' && _metric",
+            "conf": {
+              "add": [
+                {
+                  "name": "__inputId",
+                  "value": "'cribl:CriblMetrics'"
+                },
+                {
+                  "name": "_value",
+                  "value": "+_value"
+                }
+              ]
+            }
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Enable eval below to remove the sourcetype field from Cribl internal source type metrics. By default, internal source type metric events will set the sourcetype field equal to the reported source type. This can result in metric events being routed incorrectly. When enabled, the event_sourcetype dimension can be used to identify the reported source type."
+            }
+          },
+          {
+            "id": "eval",
+            "filter": "_metric && _metric.startsWith('cribl.logstream.sourcetype.')",
+            "disabled": true,
+            "conf": {
+              "remove": [
+                "sourcetype"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "devnull",
+      "conf": {
+        "functions": [
+          {
+            "id": "drop",
+            "disabled": false,
+            "filter": "true",
+            "conf": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "main",
+      "conf": {
+        "asyncFuncTimeout": 1000,
+        "functions": [
+          {
+            "id": "eval",
+            "disabled": false,
+            "filter": "true",
+            "conf": {
+              "add": [
+                {
+                  "name": "cribl",
+                  "value": "'yes'"
+                }
+              ],
+              "remove": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "palo_alto_traffic",
+      "conf": {
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "sourcetype!='pan:traffic'",
+            "conf": {},
+            "description": "Short-circuit all events that are NOT sourcetype pan:traffic",
+            "final": true
+          },
+          {
+            "id": "regex_extract",
+            "filter": "true",
+            "conf": {
+              "regex": "/(?:[^,]*,){4}(?<__log_subtype>[^,]*),(?:[^,]*,){11}(?<__src_zone>[^,]*),(?<__dest_zone>[^,]*),(?:[^,]*,){11}(?<__transport>[^,]*),(?<__action>[^,]*),(?:[^,]*,){2}(?<__bytes_in>[^,]*)/",
+              "source": "_raw"
+            },
+            "description": "Extract subtype, src/dest zones, transport, action and bytes_in"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop events of log_subtype=start as they often have incorrect app assignment. Log_subtype=end contain better information."
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "__log_subtype=='start'",
+            "conf": {},
+            "description": "Drop events of log subtype of start."
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Sample traffic with 0 bytes received at 5:1\nSample traffic from trusted-trusted & action allowed at 10:1"
+            }
+          },
+          {
+            "id": "sampling",
+            "filter": "true",
+            "conf": {
+              "rules": [
+                {
+                  "filter": "__bytes_in==0",
+                  "rate": 5
+                },
+                {
+                  "filter": "__src_zone=='trusted' && __dest_zone=='trusted' && __action=='allow'",
+                  "rate": 10
+                }
+              ]
+            },
+            "description": "Sample traffic"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop all date_* fields from each event. They're unreliable (non TZ aware) and are very rarely used."
+            }
+          },
+          {
+            "id": "eval",
+            "filter": "true",
+            "conf": {
+              "remove": [
+                "date_*"
+              ]
+            },
+            "description": "Drop fields that start with date_*"
+          }
+        ],
+        "output": "default",
+        "description": "Filter and Sample Palo Alto traffic events"
+      }
+    },
+    {
+      "id": "passthru",
+      "conf": {
+        "functions": []
+      }
+    },
+    {
+      "id": "prometheus_metrics",
+      "conf": {
+        "functions": [
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "This pipeline adds the `job` and `instance` dimensions some Grafana dashboards expect in metrics from Prometheus. Attach it as a pre-processing pipeline for the System Metrics source when it's being routed to a Prometheus destination."
+            }
+          },
+          {
+            "id": "eval",
+            "filter": "true",
+            "conf": {
+              "add": [
+                {
+                  "name": "job",
+                  "value": "'LogStream'"
+                },
+                {
+                  "name": "instance",
+                  "value": "host"
+                }
+              ],
+              "remove": [
+                "host"
+              ]
+            },
+            "description": "Adjust the `job` value below as needed. Some dashboards expect it to be set to 'node'."
+          },
+          {
+            "id": "publish_metrics",
+            "filter": "true",
+            "conf": {
+              "overwrite": false,
+              "dimensions": [
+                "job",
+                "instance"
+              ],
+              "removeMetrics": [],
+              "removeDimensions": [
+                "host"
+              ]
+            }
+          }
+        ],
+        "groups": {},
+        "output": "default",
+        "description": "Prepare Events headed to Prometheus"
+      }
+    },
+    {
+      "id": "wineventlogs",
+      "conf": {
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "!(sourcetype=='WinEventLog:Security' || source=='WinEventLog:Security')",
+            "conf": {},
+            "description": "Short-circuit all events that are NOT of source or sourcetype WinEventLog:Security",
+            "final": true
+          },
+          {
+            "id": "regex_extract",
+            "filter": "true",
+            "conf": {
+              "regex": "/EventCode=(?<__eventCode>\\d+)/",
+              "source": "_raw"
+            },
+            "description": "Extract EventCode field"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop Process Start & End emitted by Splunk Universal Forwarder process"
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "(__eventCode=='4688' || __eventCode=='4689') && _raw.indexOf('SplunkUniversalForwarder') > -1",
+            "disabled": false,
+            "conf": {},
+            "description": "Drop Process Start & End for processes Splunk creates"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Drop Repetitious Token Assignment Events"
+            }
+          },
+          {
+            "id": "drop",
+            "filter": "__eventCode=='4703' && /Security ID:\\s*NT AUTHORITY.SYSTEM/.test(_raw) && /SeAssignPrimaryTokenPrivilege\\s*SeIncreaseQuotaPrivilege\\s*SeSecurityPrivilege\\s*SeTakeOwnershipPrivilege\\s*SeLoadDriverPrivilege\\s*SeSystemtimePrivilege\\s*SeBackupPrivilege\\s*SeRestorePrivilege\\s*SeShutdownPrivilege\\s*SeSystemEnvironmentPrivilege\\s*SeUndockPrivilege\\s*SeManageVolumePrivilege/m.test(_raw)",
+            "disabled": false,
+            "conf": {},
+            "description": "Drop Repetitious Token Assignment Events",
+            "final": true
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Remove event descriptions"
+            }
+          },
+          {
+            "id": "mask",
+            "filter": "__eventCode=='4624' ||  __eventCode=='4688'",
+            "conf": {
+              "rules": [
+                {
+                  "matchRegex": "/This event is generated[\\s\\S]+$/m",
+                  "replaceExpr": "'DESCRIPTION REMOVED'"
+                },
+                {
+                  "matchRegex": "/(Process\\sCommand\\sLine:)([\\s\\S]+)$/",
+                  "replaceExpr": "`${g1} REMOVED`"
+                }
+              ],
+              "fields": [
+                "_raw"
+              ]
+            },
+            "description": "Remove event descriptions"
+          },
+          {
+            "id": "comment",
+            "filter": "true",
+            "conf": {
+              "comment": "Remove timestamps"
+            }
+          },
+          {
+            "id": "mask",
+            "filter": "true",
+            "conf": {
+              "rules": [
+                {
+                  "matchRegex": "/(.+[\\r\\n]+)(LogName)/m",
+                  "replaceExpr": "g2"
+                }
+              ],
+              "fields": [
+                "_raw"
+              ]
+            },
+            "description": "Drop Timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "checkpoint_import",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [
+          {
+            "id": "serde",
+            "filter": "true",
+            "conf": {
+              "mode": "extract",
+              "type": "json",
+              "srcField": "_raw"
+            }
+          }
+        ],
+        "description": ""
+      }
+    },
+    {
+      "id": "inframetricdigest",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "true",
+            "conf": {
+              "printUndefineds": false,
+              "add": [
+                {
+                  "disabled": true,
+                  "name": "_raw",
+                  "value": "C.Text.parseXml(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "parsed_winevent",
+                  "value": "C.Text.parseWinEvent(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "oldhost",
+                  "value": "host"
+                },
+                {
+                  "disabled": true,
+                  "name": "host",
+                  "value": "coalesce(parsed_winevent.Event.System.Security.UserID, parsed_winevent.Event.System.Provider.Name)"
+                },
+                {
+                  "disabled": true,
+                  "value": "parsed_winevent.Event.System.Security.UserID",
+                  "name": "host"
+                },
+                {
+                  "disabled": false,
+                  "name": "host",
+                  "value": "parsed_winevent.Event.System.Security.UserID + \" \" + parsed_winevent.Event.System.Provider.Name"
+                },
+                {
+                  "disabled": false,
+                  "name": "dow",
+                  "value": "hourofday(_time)"
+                },
+                {
+                  "disabled": false,
+                  "name": "hod",
+                  "value": "dayofweek(_time)"
+                }
+              ]
+            }
+          },
+          {
+            "id": "serde",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "mode": "extract",
+              "type": "kvp",
+              "srcField": "_raw",
+              "cleanFields": false,
+              "allowedKeyChars": [],
+              "allowedValueChars": []
+            }
+          },
+          {
+            "id": "aggregation",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "metricsMode": false,
+              "timeWindow": "60s",
+              "aggregations": [
+                "sum(_raw.length).as(eventbytes)",
+                "count(true).as(eventcount)"
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": false,
+              "flushOnInputClose": true,
+              "printUndefineds": false,
+              "groupbys": [
+                "host"
+              ]
+            }
+          },
+          {
+            "id": "aggregate_metrics",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "timeWindow": "600s",
+              "aggregations": [
+                {
+                  "metricType": "gauge",
+                  "agg": "sum(bytes)"
+                }
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": true,
+              "flushOnInputClose": true,
+              "groupbys": [
+                "host"
+              ]
+            }
+          },
+          {
+            "id": "publish_metrics",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "overwrite": false,
+              "dimensions": [
+                "!_*",
+                "host",
+                "dow",
+                "hod"
+              ],
+              "removeMetrics": [],
+              "removeDimensions": [],
+              "fields": [
+                {
+                  "metricType": "counter",
+                  "inFieldName": "eventcount",
+                  "outFieldExpr": "'eventcount'"
+                },
+                {
+                  "metricType": "gauge",
+                  "inFieldName": "eventbytes",
+                  "outFieldExpr": "'eventbytes'"
+                }
+              ]
+            }
+          },
+          {
+            "id": "otlp_metrics",
+            "filter": "true",
+            "conf": {
+              "resourceAttributePrefixes": [
+                "service",
+                "system",
+                "telemetry",
+                "k8s",
+                "cloud",
+                "host",
+                "process",
+                "dow",
+                "hod"
+              ],
+              "dropNonMetricEvents": true,
+              "otlpVersion": "0.10.0",
+              "batchOTLPMetrics": false
+            }
+          }
+        ],
+        "description": "chew volumninous log data and make some less frequent metrics"
+      }
+    },
+    {
+      "id": "inframetricdigest-v3",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "true",
+            "conf": {
+              "printUndefineds": false,
+              "add": [
+                {
+                  "disabled": true,
+                  "name": "_raw",
+                  "value": "C.Text.parseXml(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "parsed_winevent",
+                  "value": "C.Text.parseWinEvent(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "oldhost",
+                  "value": "host"
+                },
+                {
+                  "disabled": true,
+                  "name": "host",
+                  "value": "coalesce(parsed_winevent.Event.System.Security.UserID, parsed_winevent.Event.System.Provider.Name)"
+                },
+                {
+                  "disabled": false,
+                  "value": "iff((channel != null), channel, \"fakehost\")",
+                  "name": "host"
+                },
+                {
+                  "disabled": true,
+                  "name": "host",
+                  "value": "parsed_winevent.Event.System.Security.UserID + \" \" + parsed_winevent.Event.System.Provider.Name"
+                },
+                {
+                  "disabled": false,
+                  "name": "dow",
+                  "value": "C.Time.strftime(_time,\"%w\")"
+                },
+                {
+                  "disabled": false,
+                  "name": "hod",
+                  "value": "C.Time.strftime(_time,\"%H\")"
+                }
+              ]
+            }
+          },
+          {
+            "id": "serde",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "mode": "extract",
+              "type": "kvp",
+              "srcField": "_raw",
+              "cleanFields": false,
+              "allowedKeyChars": [],
+              "allowedValueChars": []
+            }
+          },
+          {
+            "id": "aggregation",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "metricsMode": false,
+              "timeWindow": "60s",
+              "aggregations": [
+                "sum(_raw.length).as(eventbytes)",
+                "count(true).as(eventcount)"
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": false,
+              "flushOnInputClose": true,
+              "printUndefineds": false,
+              "groupbys": [
+                "host",
+                "hod",
+                "dow"
+              ],
+              "add": []
+            }
+          },
+          {
+            "id": "aggregate_metrics",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "timeWindow": "600s",
+              "aggregations": [
+                {
+                  "metricType": "gauge",
+                  "agg": "sum(bytes)"
+                }
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": true,
+              "flushOnInputClose": true,
+              "groupbys": [
+                "host"
+              ]
+            }
+          },
+          {
+            "id": "publish_metrics",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "overwrite": false,
+              "dimensions": [
+                "!_*",
+                "host",
+                "dow",
+                "hod"
+              ],
+              "removeMetrics": [],
+              "removeDimensions": [
+                "endtime",
+                "starttime"
+              ],
+              "fields": [
+                {
+                  "metricType": "counter",
+                  "inFieldName": "eventcount",
+                  "outFieldExpr": "'eventcount'"
+                },
+                {
+                  "metricType": "gauge",
+                  "inFieldName": "eventbytes",
+                  "outFieldExpr": "'eventbytes'"
+                }
+              ]
+            }
+          },
+          {
+            "id": "otlp_metrics",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "resourceAttributePrefixes": [
+                "service",
+                "system",
+                "telemetry",
+                "k8s",
+                "cloud",
+                "host",
+                "process",
+                "dow",
+                "hod"
+              ],
+              "dropNonMetricEvents": true,
+              "otlpVersion": "0.10.0",
+              "batchOTLPMetrics": false
+            }
+          }
+        ],
+        "description": "chew volumninous log data and make some less frequent metrics"
+      }
+    },
+    {
+      "id": "inframetricdigestv2",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [
+          {
+            "id": "eval",
+            "filter": "true",
+            "conf": {
+              "printUndefineds": false,
+              "add": [
+                {
+                  "disabled": true,
+                  "name": "_raw",
+                  "value": "C.Text.parseXml(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "parsed_winevent",
+                  "value": "C.Text.parseWinEvent(_raw)"
+                },
+                {
+                  "disabled": false,
+                  "name": "oldhost",
+                  "value": "host"
+                },
+                {
+                  "disabled": true,
+                  "name": "host",
+                  "value": "coalesce(parsed_winevent.Event.System.Security.UserID, parsed_winevent.Event.System.Provider.Name)"
+                },
+                {
+                  "disabled": true,
+                  "value": "parsed_winevent.Event.System.Security.UserID",
+                  "name": "host"
+                },
+                {
+                  "disabled": false,
+                  "name": "host",
+                  "value": "parsed_winevent.Event.System.Security.UserID + \" \" + parsed_winevent.Event.System.Provider.Name"
+                },
+                {
+                  "disabled": false,
+                  "name": "dow",
+                  "value": "hourofday(_time)"
+                },
+                {
+                  "disabled": false,
+                  "name": "hod",
+                  "value": "dayofweek(_time)"
+                }
+              ]
+            }
+          },
+          {
+            "id": "serde",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "mode": "extract",
+              "type": "kvp",
+              "srcField": "_raw",
+              "cleanFields": false,
+              "allowedKeyChars": [],
+              "allowedValueChars": []
+            }
+          },
+          {
+            "id": "aggregation",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "metricsMode": false,
+              "timeWindow": "60s",
+              "aggregations": [
+                "sum(_raw.length).as(eventbytes)",
+                "count(true).as(eventcount)"
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": false,
+              "flushOnInputClose": true,
+              "printUndefineds": false,
+              "groupbys": [
+                "host"
+              ],
+              "add": [
+                {
+                  "name": "dow",
+                  "value": "dayofweek(_time)"
+                },
+                {
+                  "name": "hod",
+                  "value": "hourofday(_time)"
+                }
+              ]
+            }
+          },
+          {
+            "id": "aggregate_metrics",
+            "filter": "true",
+            "disabled": true,
+            "conf": {
+              "passthrough": false,
+              "preserveGroupBys": false,
+              "sufficientStatsOnly": false,
+              "timeWindow": "600s",
+              "aggregations": [
+                {
+                  "metricType": "gauge",
+                  "agg": "sum(bytes)"
+                }
+              ],
+              "cumulative": false,
+              "shouldTreatDotsAsLiterals": true,
+              "flushOnInputClose": true,
+              "groupbys": [
+                "host"
+              ]
+            }
+          },
+          {
+            "id": "publish_metrics",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "overwrite": false,
+              "dimensions": [
+                "!_*",
+                "host",
+                "dow",
+                "hod"
+              ],
+              "removeMetrics": [],
+              "removeDimensions": [],
+              "fields": [
+                {
+                  "metricType": "counter",
+                  "inFieldName": "eventcount",
+                  "outFieldExpr": "'eventcount'"
+                },
+                {
+                  "metricType": "gauge",
+                  "inFieldName": "eventbytes",
+                  "outFieldExpr": "'eventbytes'"
+                }
+              ]
+            }
+          },
+          {
+            "id": "otlp_metrics",
+            "filter": "true",
+            "disabled": false,
+            "conf": {
+              "resourceAttributePrefixes": [
+                "service",
+                "system",
+                "telemetry",
+                "k8s",
+                "cloud",
+                "host",
+                "process",
+                "dow",
+                "hod"
+              ],
+              "dropNonMetricEvents": true,
+              "otlpVersion": "0.10.0",
+              "batchOTLPMetrics": false
+            }
+          }
+        ],
+        "description": "chew volumninous log data and make some less frequent metrics"
+      }
+    },
+    {
+      "id": "loadbalancer",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [],
+        "description": ""
+      }
+    },
+    {
+      "id": "test",
+      "conf": {
+        "output": "default",
+        "streamtags": [],
+        "groups": {},
+        "asyncFuncTimeout": 1000,
+        "functions": [],
+        "description": ""
+      }
+    },
+    {
+      "id": "pack:cribl-palo-alto-networks-source",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-palo-alto-networks-source_1-0-0-mod",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-syslog-input",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-salesforce-rest-io",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-openai-rest-io",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cc-criblvision-for-splunk",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-fortinet-fortigate-firewall",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-crowdstrike-rest",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl_splunk_forwarder_windows_classic_events_to_json",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cc-netskope-events-and-alerts",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl-palo-alto-networks",
+      "conf": {
+        "pack": true
+      }
+    },
+    {
+      "id": "pack:cribl_crowdstrike",
+      "conf": {
+        "pack": true
+      }
+    }
+  ],
+  "system/inputs": [
+    {
+      "id": "CriblMetrics",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [],
+      "prefix": "cribl.logstream.",
+      "fullFidelity": false,
+      "pipeline": "cribl_metrics_rollup",
+      "type": "criblmetrics",
+      "metadata": [
+        {
+          "name": "cribl_env",
+          "value": "dev"
+        }
+      ],
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "buffered": 0,
+          "dropped": 0,
+          "received": 0
+        }
+      }
+    },
+    {
+      "id": "CriblLogs",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [],
+      "type": "cribl",
+      "filter": "channel.startsWith('input:') || channel.startsWith('output:') || channel.startsWith('SourcePQ:') || channel.startsWith('DestPQ:') || source.includes('audit.log') || source.includes('access.log')",
+      "metadata": [
+        {
+          "name": "cribl_env",
+          "value": "dev"
+        }
+      ],
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "buffered": 0,
+          "dropped": 0,
+          "received": 0
+        }
+      }
+    },
+    {
+      "id": "http",
+      "criblAPI": "/cribl",
+      "elasticAPI": "/elastic",
+      "host": "0.0.0.0",
+      "port": 10080,
+      "splunkHecAPI": "/services/collector",
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "http",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "numInProgress": 0,
+          "numEventProcessors": 0
+        }
+      }
+    },
+    {
+      "id": "in_cribl_http",
+      "activityLogSampleRate": 100,
+      "captureHeaders": false,
+      "disabled": false,
+      "enableProxyHeader": false,
+      "host": "0.0.0.0",
+      "maxActiveReq": 256,
+      "port": 10200,
+      "pqEnabled": false,
+      "requestTimeout": 0,
+      "sendToRoutes": true,
+      "streamtags": [],
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "cribl_http",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "numInProgress": 0,
+          "numEventProcessors": 0
+        }
+      }
+    },
+    {
+      "id": "in_cribl_tcp",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [],
+      "host": "0.0.0.0",
+      "tls": {
+        "disabled": true,
+        "requestCert": false,
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "maxActiveCxn": 1000,
+      "socketIdleTimeout": 0,
+      "socketEndingMaxWait": 30,
+      "socketMaxLifespan": 0,
+      "enableProxyHeader": false,
+      "enableLoadBalancing": false,
+      "port": 10300,
+      "type": "cribl_tcp",
+      "status": {
+        "health": "Red",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "count": 0,
+          "items": []
+        }
+      },
+      "notifications": [
+        {
+          "disabled": false,
+          "targets": [
+            "simple_hook"
+          ],
+          "conf": {
+            "name": "cribl_tcp:in_cribl_tcp",
+            "timeWindow": "60s",
+            "notifyOnResolution": true,
+            "dataVolume": "4GB"
+          },
+          "condition": "low-volume",
+          "targetConfigs": [
+            {
+              "id": "simple_hook"
+            }
+          ],
+          "group": "default",
+          "id": "test_hook"
+        }
+      ]
+    },
+    {
+      "id": "in_elastic",
+      "elasticAPI": "/",
+      "host": "0.0.0.0",
+      "port": 9200,
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "elastic",
+      "disabled": true,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "numProxyReq": 0,
+          "numProxyErrors": 0,
+          "numInProgress": 0,
+          "numEventProcessors": 0
+        }
+      }
+    },
+    {
+      "id": "in_syslog_default",
+      "disabled": true,
+      "type": "syslog",
+      "tcpPort": 10514,
+      "udpPort": 10514,
+      "host": "0.0.0.0",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "items": [],
+          "count": 0
+        }
+      }
+    },
+    {
+      "id": "in_splunk_tcp",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [],
+      "host": "0.0.0.0",
+      "tls": {
+        "disabled": false,
+        "requestCert": false,
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "ipWhitelistRegex": "/.*/",
+      "maxActiveCxn": 1000,
+      "socketIdleTimeout": 0,
+      "socketEndingMaxWait": 30,
+      "socketMaxLifespan": 0,
+      "enableProxyHeader": false,
+      "staleChannelFlushMs": 10000,
+      "maxS2Sversion": "v4",
+      "useFwdTimezone": true,
+      "dropControlFields": true,
+      "extractMetrics": false,
+      "compress": "disabled",
+      "port": 9997,
+      "type": "splunk",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410713,
+        "metrics": {
+          "activeSockets": 0,
+          "received": 0,
+          "activeBreakers": 0,
+          "broken": 0
+        }
+      }
+    },
+    {
+      "id": "in_syslog",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [
+        "test"
+      ],
+      "host": "0.0.0.0",
+      "maxBufferSize": 1000,
+      "ipWhitelistRegex": "/.*/",
+      "timestampTimezone": "local",
+      "singleMsgUdpPackets": false,
+      "enableProxyHeader": false,
+      "keepFieldsList": [],
+      "octetCounting": false,
+      "inferFraming": true,
+      "strictlyInferOctetCounting": true,
+      "allowNonStandardAppName": false,
+      "maxActiveCxn": 1000,
+      "socketIdleTimeout": 0,
+      "socketEndingMaxWait": 30,
+      "socketMaxLifespan": 0,
+      "tls": {
+        "disabled": true
+      },
+      "enableLoadBalancing": false,
+      "tcpPort": 9514,
+      "type": "syslog",
+      "udpPort": 9514,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "items": [],
+          "count": 0
+        }
+      },
+      "notifications": [
+        {
+          "disabled": false,
+          "targets": [],
+          "conf": {
+            "name": "syslog:in_syslog",
+            "timeWindow": "60s",
+            "notifyOnResolution": true,
+            "dataVolume": "10KB"
+          },
+          "metadata": [],
+          "condition": "low-volume",
+          "group": "default",
+          "id": "syslog_low_data"
+        },
+        {
+          "disabled": false,
+          "targets": [],
+          "conf": {
+            "name": "syslog:in_syslog",
+            "timeWindow": "60s",
+            "notifyOnResolution": true,
+            "usageThreshold": 90
+          },
+          "condition": "no-data",
+          "group": "default",
+          "id": "syslog_no_data"
+        }
+      ]
+    },
+    {
+      "id": "in_syslog_tls",
+      "host": "0.0.0.0",
+      "tcpPort": 6514,
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "syslog",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "items": [],
+          "count": 0
+        }
+      }
+    },
+    {
+      "id": "in_tcp",
+      "host": "0.0.0.0",
+      "port": 10060,
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "tcp",
+      "authType": "manual",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "activeSockets": 0,
+          "received": 0,
+          "activeBreakers": 0,
+          "broken": 0
+        }
+      }
+    },
+    {
+      "id": "in_tcp_json",
+      "host": "0.0.0.0",
+      "port": 10070,
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "tcpjson",
+      "authType": "manual",
+      "status": {
+        "health": "Red",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "count": 0,
+          "items": []
+        }
+      }
+    },
+    {
+      "id": "open_telemetry",
+      "activityLogSampleRate": 100,
+      "captureHeaders": false,
+      "disabled": false,
+      "enableProxyHeader": false,
+      "extractMetrics": false,
+      "extractSpans": false,
+      "host": "0.0.0.0",
+      "maxActiveCxn": 1000,
+      "maxActiveReq": 256,
+      "port": 4317,
+      "pqEnabled": false,
+      "requestTimeout": 0,
+      "sendToRoutes": true,
+      "streamtags": [],
+      "tls": {
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "disabled": false,
+        "minVersion": "TLSv1.2",
+        "privKeyPath": "$CRIBL_CLOUD_KEY"
+      },
+      "type": "open_telemetry",
+      "authType": "none",
+      "authMethodsExt": [],
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "numRequests": 0,
+          "numPushed": 0,
+          "numErrors": 0,
+          "numDropped": 0
+        }
+      }
+    },
+    {
+      "id": "in_splunk_hec",
+      "type": "splunk_hec",
+      "port": 8088,
+      "host": "0.0.0.0",
+      "splunkHecAPI": "/services/collector",
+      "authTokens": [
+        {
+          "token": "REDACTED",
+          "description": "Default token"
+        }
+      ],
+      "tls": {
+        "disabled": false,
+        "privKeyPath": "$CRIBL_CLOUD_KEY",
+        "certPath": "$CRIBL_CLOUD_CRT",
+        "minVersion": "TLSv1.2"
+      },
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "numInProgress": 0,
+          "numEventProcessors": 0
+        }
+      }
+    },
+    {
+      "id": "cribl-lake-gen",
+      "disabled": false,
+      "sendToRoutes": true,
+      "pqEnabled": false,
+      "streamtags": [],
+      "samples": [
+        {
+          "eventsPerSec": 10,
+          "sample": "big_json"
+        },
+        {
+          "eventsPerSec": 10,
+          "sample": "apache_error"
+        },
+        {
+          "eventsPerSec": 10,
+          "sample": "syslog"
+        }
+      ],
+      "type": "datagen",
+      "description": "lab 8 datagen for cribl lake",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410714,
+        "metrics": {
+          "eventCount": 0
+        }
+      }
+    }
+  ],
+  "system/outputs": [
+    {
+      "id": "default",
+      "type": "default",
+      "defaultId": "devnull",
+      "status": {}
+    },
+    {
+      "id": "devnull",
+      "type": "devnull",
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    },
+    {
+      "id": "criblvision",
+      "systemFields": [
+        "cribl_pipe"
+      ],
+      "streamtags": [],
+      "signatureVersion": "v4",
+      "reuseConnections": true,
+      "rejectUnauthorized": true,
+      "enableAssumeRole": false,
+      "durationSeconds": 3600,
+      "stagePath": "$CRIBL_HOME/state/outputs/staging",
+      "addIdToStagePath": true,
+      "objectACL": "private",
+      "removeEmptyDirs": true,
+      "baseFileName": "`CriblOut`",
+      "fileNameSuffix": "`.${C.env[\"CRIBL_WORKER_ID\"]}.${__format}${__compression === \"gzip\" ? \".gz\" : \"\"}`",
+      "maxFileSizeMB": 64,
+      "maxOpenFiles": 100,
+      "headerLine": "",
+      "writeHighWaterMark": 64,
+      "onBackpressure": "block",
+      "deadletterEnabled": false,
+      "onDiskFullBackpressure": "block",
+      "forceCloseOnShutdown": false,
+      "retrySettings": {
+        "enabled": true,
+        "initialBackoffMs": 10000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 60000,
+        "jitterPercent": 25
+      },
+      "maxFileOpenTimeSec": 300,
+      "maxFileIdleTimeSec": 300,
+      "verifyPermissions": true,
+      "maxClosingFilesToBackpressure": 100,
+      "awsAuthenticationMethod": "auto",
+      "maxConcurrentFileParts": 1,
+      "dynamicDataset": false,
+      "emptyDirCleanupSec": 300,
+      "directoryBatchSize": 1000,
+      "type": "cribl_lake",
+      "destPath": "criblvision",
+      "compress": "gzip",
+      "orphans": {
+        "disabled": true
+      },
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    },
+    {
+      "id": "somedata",
+      "systemFields": [
+        "cribl_pipe"
+      ],
+      "streamtags": [],
+      "signatureVersion": "v4",
+      "reuseConnections": true,
+      "rejectUnauthorized": true,
+      "enableAssumeRole": false,
+      "durationSeconds": 3600,
+      "stagePath": "$CRIBL_HOME/state/outputs/staging",
+      "addIdToStagePath": true,
+      "objectACL": "private",
+      "removeEmptyDirs": true,
+      "baseFileName": "`CriblOut`",
+      "fileNameSuffix": "`.${C.env[\"CRIBL_WORKER_ID\"]}.${__format}${__compression === \"gzip\" ? \".gz\" : \"\"}`",
+      "maxFileSizeMB": 64,
+      "maxOpenFiles": 100,
+      "headerLine": "",
+      "writeHighWaterMark": 64,
+      "onBackpressure": "block",
+      "deadletterEnabled": false,
+      "onDiskFullBackpressure": "block",
+      "forceCloseOnShutdown": false,
+      "retrySettings": {
+        "enabled": true,
+        "initialBackoffMs": 10000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 60000,
+        "jitterPercent": 25
+      },
+      "maxFileOpenTimeSec": 300,
+      "maxFileIdleTimeSec": 300,
+      "verifyPermissions": true,
+      "maxClosingFilesToBackpressure": 100,
+      "awsAuthenticationMethod": "auto",
+      "maxConcurrentFileParts": 1,
+      "dynamicDataset": false,
+      "emptyDirCleanupSec": 300,
+      "directoryBatchSize": 1000,
+      "type": "cribl_lake",
+      "destPath": "somedata",
+      "compress": "gzip",
+      "orphans": {
+        "disabled": true
+      },
+      "storageLocationId": "cribl_lake",
+      "freshnessGracePeriodSec": 30,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    },
+    {
+      "id": "infra_metrics",
+      "systemFields": [
+        "cribl_pipe"
+      ],
+      "streamtags": [],
+      "signatureVersion": "v4",
+      "reuseConnections": true,
+      "rejectUnauthorized": true,
+      "enableAssumeRole": false,
+      "durationSeconds": 3600,
+      "stagePath": "$CRIBL_HOME/state/outputs/staging",
+      "addIdToStagePath": true,
+      "objectACL": "private",
+      "removeEmptyDirs": true,
+      "baseFileName": "`CriblOut`",
+      "fileNameSuffix": "`.${C.env[\"CRIBL_WORKER_ID\"]}.${__format}${__compression === \"gzip\" ? \".gz\" : \"\"}`",
+      "maxFileSizeMB": 64,
+      "maxOpenFiles": 100,
+      "headerLine": "",
+      "writeHighWaterMark": 64,
+      "onBackpressure": "block",
+      "deadletterEnabled": false,
+      "onDiskFullBackpressure": "block",
+      "forceCloseOnShutdown": false,
+      "retrySettings": {
+        "enabled": true,
+        "initialBackoffMs": 10000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 60000,
+        "jitterPercent": 25
+      },
+      "orphans": {
+        "disabled": false,
+        "periodMin": 10
+      },
+      "maxFileOpenTimeSec": 300,
+      "maxFileIdleTimeSec": 300,
+      "verifyPermissions": true,
+      "maxClosingFilesToBackpressure": 100,
+      "awsAuthenticationMethod": "auto",
+      "maxConcurrentFileParts": 1,
+      "dynamicDataset": false,
+      "emptyDirCleanupSec": 300,
+      "directoryBatchSize": 1000,
+      "type": "cribl_lake",
+      "destPath": "infra_metrics",
+      "compress": "gzip",
+      "storageLocationId": "cribl_lake",
+      "freshnessGracePeriodSec": 30,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    },
+    {
+      "id": "infra3ld",
+      "systemFields": [
+        "cribl_pipe"
+      ],
+      "streamtags": [],
+      "signatureVersion": "v4",
+      "reuseConnections": true,
+      "rejectUnauthorized": true,
+      "enableAssumeRole": false,
+      "durationSeconds": 3600,
+      "stagePath": "$CRIBL_HOME/state/outputs/staging",
+      "addIdToStagePath": true,
+      "objectACL": "private",
+      "removeEmptyDirs": true,
+      "baseFileName": "`CriblOut`",
+      "fileNameSuffix": "`.${C.env[\"CRIBL_WORKER_ID\"]}.${__format}${__compression === \"gzip\" ? \".gz\" : \"\"}`",
+      "maxFileSizeMB": 64,
+      "maxOpenFiles": 100,
+      "headerLine": "",
+      "writeHighWaterMark": 64,
+      "onBackpressure": "block",
+      "deadletterEnabled": false,
+      "onDiskFullBackpressure": "block",
+      "forceCloseOnShutdown": false,
+      "retrySettings": {
+        "enabled": true,
+        "initialBackoffMs": 10000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 60000,
+        "jitterPercent": 25
+      },
+      "orphans": {
+        "disabled": false,
+        "periodMin": 10
+      },
+      "maxFileOpenTimeSec": 300,
+      "maxFileIdleTimeSec": 300,
+      "verifyPermissions": true,
+      "maxClosingFilesToBackpressure": 100,
+      "awsAuthenticationMethod": "auto",
+      "maxConcurrentFileParts": 1,
+      "dynamicDataset": false,
+      "emptyDirCleanupSec": 300,
+      "directoryBatchSize": 1000,
+      "type": "cribl_lake",
+      "destPath": "infra3",
+      "compress": "gzip",
+      "storageLocationId": "cribl_lake",
+      "freshnessGracePeriodSec": 30,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    },
+    {
+      "id": "default-logs-out",
+      "systemFields": [
+        "cribl_pipe"
+      ],
+      "streamtags": [],
+      "signatureVersion": "v4",
+      "reuseConnections": true,
+      "rejectUnauthorized": true,
+      "enableAssumeRole": false,
+      "durationSeconds": 3600,
+      "stagePath": "$CRIBL_HOME/state/outputs/staging",
+      "addIdToStagePath": true,
+      "objectACL": "private",
+      "removeEmptyDirs": true,
+      "baseFileName": "`CriblOut`",
+      "fileNameSuffix": "`.${C.env[\"CRIBL_WORKER_ID\"]}.${__format}${__compression === \"gzip\" ? \".gz\" : \"\"}`",
+      "maxFileSizeMB": 64,
+      "maxOpenFiles": 100,
+      "headerLine": "",
+      "writeHighWaterMark": 64,
+      "onBackpressure": "block",
+      "deadletterEnabled": false,
+      "onDiskFullBackpressure": "block",
+      "forceCloseOnShutdown": false,
+      "retrySettings": {
+        "enabled": true,
+        "initialBackoffMs": 10000,
+        "backoffMultiplier": 2,
+        "maxBackoffMs": 60000,
+        "jitterPercent": 25
+      },
+      "orphans": {
+        "disabled": false,
+        "periodMin": 10
+      },
+      "maxFileOpenTimeSec": 300,
+      "maxFileIdleTimeSec": 300,
+      "verifyPermissions": true,
+      "maxClosingFilesToBackpressure": 100,
+      "awsAuthenticationMethod": "auto",
+      "maxConcurrentFileParts": 1,
+      "dynamicDataset": false,
+      "emptyDirCleanupSec": 300,
+      "directoryBatchSize": 1000,
+      "type": "cribl_lake",
+      "description": "lab 8 destination",
+      "destPath": "default_logs",
+      "compress": "gzip",
+      "storageLocationId": "cribl_lake",
+      "freshnessGracePeriodSec": 30,
+      "status": {
+        "health": "Green",
+        "timestamp": 1790433410803,
+        "metrics": {}
+      }
+    }
+  ],
+  "packs": [
+    {
+      "version": "3.0.2",
+      "minLogStreamVersion": "4.0.0",
+      "author": "Ahmed Kira - Cribl",
+      "description": "Transform, enrich, drop, and reduce event size of various Crowdstrike FDR events",
+      "displayName": "Crowdstrike FDR Pack",
+      "tags": {
+        "streamtags": [
+          "FDR",
+          "Crowdstrike",
+          "falcon",
+          "data",
+          "replicator",
+          "endpoint",
+          "ocsf",
+          "#OCSF"
+        ],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "enrichment",
+          "aggregation",
+          "filtering",
+          "routing"
+        ]
+      },
+      "id": "cribl_crowdstrike",
+      "source": "https://packs.cribl.io/dl/cribl_crowdstrike/latest/cribl_crowdstrike-latest.crbl"
+    },
+    {
+      "version": "1.2.7",
+      "minLogStreamVersion": "4.0.0",
+      "author": "David Maislin",
+      "description": "This pack is designed to transform Splunk Windows Classic events to JSON, reduce event sizes, be compliant with the Splunk Common Information Model (CIM) and maintain backwards compatibility with the Splunk Add-on for Microsoft Windows and the Splunk Common Information Model (CIM)",
+      "displayName": "Splunk Forwarder Windows Classic Events to JSON",
+      "tags": {
+        "streamtags": [
+          "Classic",
+          "Windows",
+          "wevtutil"
+        ],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction"
+        ]
+      },
+      "id": "cribl_splunk_forwarder_windows_classic_events_to_json",
+      "source": "https://packs.cribl.io/dl/cribl_splunk_forwarder_windows_classic_events_to_json/latest/cribl_splunk_forwarder_windows_classic_events_to_json-latest.crbl"
+    },
+    {
+      "version": "0.1.5",
+      "minLogStreamVersion": "4.14.0",
+      "author": "Cribl Packs Team",
+      "description": "Collector pack to process data from the Crowdstrike Alerts, Devices, and Vulnerabilities REST endpoints.",
+      "displayName": "Crowdstrike Rest Collector",
+      "tags": {
+        "streamtags": [
+          "Crowdstrike",
+          "OCSF"
+        ],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "routing"
+        ]
+      },
+      "exports": [],
+      "id": "cribl-crowdstrike-rest",
+      "source": "https://packs.cribl.io/dl/cribl-crowdstrike-rest/latest/cribl-crowdstrike-rest-latest.crbl"
+    },
+    {
+      "version": "1.1.6",
+      "author": "Josh Rice - Cribl",
+      "description": "Process, reduce, and transform Palo Alto Networks Firewall logs.",
+      "displayName": "Palo Alto Networks",
+      "tags": {
+        "streamtags": [],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "filtering"
+        ],
+        "technology": [
+          "paloalto"
+        ]
+      },
+      "id": "cribl-palo-alto-networks",
+      "source": "https://packs.cribl.io/dl/cribl-palo-alto-networks/latest/cribl-palo-alto-networks-latest.crbl"
+    },
+    {
+      "version": "1.0.0",
+      "minLogStreamVersion": "4.3.0",
+      "author": "Dan Schmitz - Cribl",
+      "description": "This Cribl Source Pack for Palo Alto Network Firewalls process Traffic and Threat logs and maps them into a Common Schema. This pack is designed to be applied to the source where the Palo Alto logs are coming in.",
+      "displayName": "Palo Alto Networks Source",
+      "tags": {
+        "streamtags": [
+          "PaloAlto"
+        ],
+        "technology": [
+          "paloalto"
+        ],
+        "useCase": [],
+        "dataType": [
+          "logs"
+        ]
+      },
+      "id": "cribl-palo-alto-networks-source",
+      "source": "https://packs.cribl.io/dl/cribl-palo-alto-networks-source/latest/cribl-palo-alto-networks-source-latest.crbl"
+    },
+    {
+      "version": "1.1.2",
+      "minLogStreamVersion": "4.15.0",
+      "author": "Cribl Packs Team",
+      "description": "Pack to collect Salesforce Event Log File data from Salesforce API",
+      "displayName": "Salesforce Rest Collector IO",
+      "tags": {
+        "streamtags": [],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "routing"
+        ]
+      },
+      "exports": [],
+      "id": "cribl-salesforce-rest-io",
+      "source": "https://packs.cribl.io/dl/cribl-salesforce-rest-io/latest/cribl-salesforce-rest-io-latest.crbl"
+    },
+    {
+      "version": "1.5.1",
+      "minLogStreamVersion": "4.6.0",
+      "author": "David Sheridan - GKC",
+      "description": "A companion Pack to assist with the CriblVision for Splunk Add-on.",
+      "displayName": "CriblVision for Splunk",
+      "tags": {
+        "streamtags": [
+          "cribl",
+          "criblvision"
+        ],
+        "dataType": [
+          "logs",
+          "metrics"
+        ],
+        "useCase": [
+          "enrichment"
+        ]
+      },
+      "id": "cc-criblvision-for-splunk",
+      "source": "https://packs.cribl.io/dl/cc-criblvision-for-splunk/latest/cc-criblvision-for-splunk-latest.crbl"
+    },
+    {
+      "version": "0.6.0",
+      "author": "Raanan Dagan - Cribl",
+      "description": "Fortinet FortiGate Firewall Events",
+      "displayName": "Fortinet Fortigate",
+      "tags": {
+        "streamtags": [],
+        "useCase": [
+          "reduction",
+          "enrichment"
+        ]
+      },
+      "id": "cribl-fortinet-fortigate-firewall",
+      "source": "https://packs.cribl.io/dl/cribl-fortinet-fortigate-firewall/latest/cribl-fortinet-fortigate-firewall-latest.crbl"
+    },
+    {
+      "version": "1.0.0",
+      "minLogStreamVersion": "4.5.0",
+      "author": "Gary Jenkins",
+      "description": "For pulling Events and Alerts from Netskope via API",
+      "displayName": "Netskope Events and Alerts",
+      "tags": {
+        "streamtags": [
+          "Netskope"
+        ],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "routing",
+          "filtering"
+        ]
+      },
+      "id": "cc-netskope-events-and-alerts",
+      "source": "https://packs.cribl.io/dl/cc-netskope-events-and-alerts/latest/cc-netskope-events-and-alerts-latest.crbl"
+    },
+    {
+      "version": "1.0.0",
+      "minLogStreamVersion": "4.3.0",
+      "author": "Dan Schmitz - Cribl",
+      "description": "This Cribl Source Pack for Palo Alto Network Firewalls process Traffic and Threat logs and maps them into a Common Schema. This pack is designed to be applied to the source where the Palo Alto logs are coming in.",
+      "displayName": "Palo Alto Networks Source",
+      "tags": {
+        "streamtags": [
+          "PaloAlto"
+        ],
+        "technology": [
+          "paloalto"
+        ],
+        "useCase": [],
+        "dataType": [
+          "logs"
+        ]
+      },
+      "id": "cribl-palo-alto-networks-source_1-0-0-mod",
+      "source": "file:/opt/cribl_config/state/packs/cribl-palo-alto-networks-source_1.0.0-mod.7BSi0dQ.crbl"
+    },
+    {
+      "version": "1.3.1",
+      "minLogStreamVersion": "3.4.0",
+      "author": "Michael Donnelly - Cribl",
+      "description": "Pre-process data received over Syslog, for volume reduction and enrichment.  Timestamp normalization is implemented for hosts without time zones.",
+      "displayName": "Syslog Pre-processing",
+      "tags": {
+        "streamtags": [
+          "syslog"
+        ],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "filtering",
+          "enrichment"
+        ],
+        "technology": [
+          "cisco",
+          "paloalto"
+        ]
+      },
+      "id": "cribl-syslog-input",
+      "source": "https://packs.cribl.io/dl/cribl-syslog-input/latest/cribl-syslog-input-latest.crbl"
+    },
+    {
+      "version": "2.0.0",
+      "minLogStreamVersion": "4.17.0",
+      "author": "Cribl Packs Team",
+      "description": "Collector pack to process data from OpenAI API",
+      "displayName": "OpenAI Rest Collector IO",
+      "tags": {
+        "streamtags": [],
+        "dataType": [
+          "logs"
+        ],
+        "useCase": [
+          "reduction",
+          "routing"
+        ]
+      },
+      "exports": [],
+      "id": "cribl-openai-rest-io",
+      "source": "https://packs.cribl.io/dl/cribl-openai-rest-io/latest/cribl-openai-rest-io-latest.crbl"
+    }
+  ]
+}

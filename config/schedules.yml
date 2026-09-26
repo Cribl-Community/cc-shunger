@@ -1,0 +1,15 @@
+# Scheduled backend functions (platform Schedule API). The platform runs each schedule on its cron
+# and POSTs a JSON body to the named backend endpoint at fire time — a schedule is just an automatic
+# call to an endpoint you already declared in config/backend.yml. Endpoints handle it in the same
+# `onRequest` they use for HTTP; there is no separate onSchedule handler.
+#
+# Top-level keys are schedule ids. Each record has:
+#   endpoint       — backend endpoint name (from config/backend.yml) to invoke
+#   cronSchedule   — five-field cron expression (UTC)
+#   bodyExpression — optional JS expression; its result is POSTed as the request body at fire time
+# Do NOT nest an `id:` inside a record — the top-level key is the id. Max 10 schedules per app.
+#
+# tick:
+#   endpoint: tick
+#   cronSchedule: '0 * * * *'
+#   # bodyExpression: '{ scheduleId, scheduledFor }'
