@@ -1,8 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, EmptyState, Spinner, TabNav, Text } from '@capra/core';
 import { listWorkerGroups, type WorkerGroup } from './api/groups';
+import { lint } from './lint/runner';
 import AsBuiltTab from './ui/AsBuiltTab';
 import GroupPicker from './ui/GroupPicker';
+import LinterTab from './ui/LinterTab';
 import { useInventory } from './ui/useInventory';
 
 // Dev-only tools (demo seeder, Phase 0 probe); the DEV guard lets Vite drop them from production.
@@ -15,11 +17,6 @@ type Load =
 
 type Tab = 'asbuilt' | 'linter' | 'snapshots';
 
-const TABS = [
-  { key: 'asbuilt', name: 'As-Built' },
-  { key: 'linter', name: 'Linter' },
-  { key: 'snapshots', name: 'Snapshots' },
-];
 
 function App() {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
@@ -28,6 +25,12 @@ function App() {
   const [tab, setTab] = useState<Tab>('asbuilt');
   const [showDev, setShowDev] = useState(false);
   const [inv, reloadInventory] = useInventory(groupId);
+  const findings = useMemo(() => (inv.state === 'ready' ? lint(inv.inventory, inv.graph) : []), [inv]);
+  const tabs = [
+    { key: 'asbuilt', name: 'As-Built' },
+    { key: 'linter', name: inv.state === 'ready' ? `Linter (${findings.length})` : 'Linter' },
+    { key: 'snapshots', name: 'Snapshots' },
+  ];
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -89,7 +92,7 @@ function App() {
               </Alert>
             )}
 
-            <TabNav aria-label="Blueprint views" items={TABS} activeKey={tab} onTabPress={(k) => setTab(k as Tab)} />
+            <TabNav aria-label="Blueprint views" items={tabs} activeKey={tab} onTabPress={(k) => setTab(k as Tab)} />
 
             {inv.state === 'loading' && <Spinner />}
             {inv.state === 'error' && (
@@ -101,9 +104,9 @@ function App() {
                 {inv.message}
               </Alert>
             )}
-            {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} />}
+            {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} findings={findings} />}
             {inv.state === 'ready' && tab === 'linter' && (
-              <EmptyState title="Linter" description="Coming in Phase 3." />
+              <LinterTab inventory={inv.inventory} graph={inv.graph} findings={findings} />
             )}
             {inv.state === 'ready' && tab === 'snapshots' && (
               <EmptyState title="Snapshots" description="Coming in Phase 4." />

@@ -2,11 +2,11 @@
 // (L03/L04), so QuickConnect, Output Routers, and the `default` alias are handled in one place.
 import type { Destination, Inventory } from './types';
 
-export type RefKind = 'route' | 'source' | 'quickconnect' | 'destination' | 'router' | 'alias';
+export type RefKind = 'route' | 'source' | 'quickconnect' | 'destination' | 'router' | 'alias' | 'chain';
 
 export interface Ref {
   kind: RefKind;
-  /** Id of the referencing object (route id, source id, destination id). */
+  /** Id of the referencing object (route, source, destination, or chaining pipeline id). */
   from: string;
 }
 
@@ -92,6 +92,15 @@ export function buildGraph(inv: Inventory): ReferenceGraph {
     push(pipelineRefs, dest.pipeline, { kind: 'destination', from: dest.id });
     push(destinationRefs, dest.defaultId, { kind: 'alias', from: dest.id });
     for (const rule of dest.rules) push(destinationRefs, rule.output, { kind: 'router', from: dest.id });
+  }
+
+  // A Chain function sends events through another pipeline or pack (conf.processor).
+  for (const pipe of inv.pipelines) {
+    for (const fn of pipe.functions) {
+      if (fn.id === 'chain' && !fn.disabled && typeof fn.conf.processor === 'string') {
+        push(pipelineRefs, fn.conf.processor, { kind: 'chain', from: pipe.id });
+      }
+    }
   }
 
   const hasDynamicOutputs = inv.routes.some((r) => !r.disabled && r.outputExpression !== undefined);

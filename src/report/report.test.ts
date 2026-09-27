@@ -4,6 +4,7 @@ import { buildGraph } from '../model/graph';
 import { normalize } from '../model/normalize';
 import { buildAsBuilt } from './asBuilt';
 import { layoutFlow, NODE_W } from './flowLayout';
+import { lint } from '../lint/runner';
 import { cell, code, toMarkdown } from './markdown';
 
 const demo = inventory({
@@ -99,6 +100,18 @@ describe('markdown', () => {
     expect(md).toContain('-.->'); // QuickConnect edge
     expect(md).toContain('default → devnull');
     expect(md.split('```mermaid')[1].split('```')[0]).not.toContain('gen_off'); // disabled sources omitted
+    expect(md).not.toContain('## Findings');
+  });
+
+  it('adds a masked findings table when findings are passed', () => {
+    const inv = normalize(demoRaw());
+    const graph = buildGraph(inv);
+    const md = toMarkdown(buildAsBuilt(inv, graph), graph.flows, new Date(0), lint(inv, graph));
+    expect(md).toContain('## Findings');
+    expect(md).toContain('2 errors, 4 warnings, 2 info.');
+    expect(md).toContain('| Error | L01 | route catch_all_early |');
+    expect(md).not.toContain('FAKE0000blueprint');
+    expect(md.indexOf('## Findings')).toBeLessThan(md.indexOf('## Data flow'));
   });
 });
 

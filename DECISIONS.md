@@ -31,7 +31,7 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - The built-in `passthru` pipeline is intentionally empty: exempt from L06.
 - The `default` destination is an alias: `{ type: "default", defaultId: "devnull" }`. Resolve it before L02/L04 and in the diagram. In the lab workspace the Default route resolves to devnull, which is a real L02 hit.
 - Function shape: `{ id, filter, conf, description?, disabled?, final? }`; `id` is the function type (e.g. `eval`).
-- A route can point at a destination that doesn't exist (lab has `output: "false"`). A cheap "dangling reference" rule is possible, but Config Quest already has `dangling-route`; not planned.
+- Correction (Phase 3): the lab route `Cribl_Logs` is not dangling. It uses an output expression (`enableOutputExpression: true`); its `output: "false"` field is ignored by Cribl. Its expression `__outputId=="criblvision"` evaluates to a boolean, not a destination id, which is likely a real misconfiguration but out of scope.
 - No QuickConnect `connections` in the lab workspace; the demo group must seed one to test that path.
 
 ## As-Built (Phase 2)
@@ -43,6 +43,16 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - Demo config is code (`demo/seed.ts`). The same data is the "bad" test fixture.
 - Extra Worker Groups need Cribl Enterprise (Steve's lab has only `default`), so the demo target is the `default` group of a spare free workspace. That workspace also provides the clean fixture (captured before seeding) and the clean-install test.
 - The seeder guard is content-based, not name-based, since every workspace has a `default` group. It shows the workspace host, and if the Routing table holds routes the seed doesn't own, it requires typing that host to proceed.
+
+## Linter (Phase 3)
+
+- One file per rule in `src/lint/rules/`, pure functions of Inventory + reference graph. The runner assigns severity and a stable key, `<rule>/<kind>/<id>[/<detail>]`, which suppressions will use.
+- L01 reports only the first shadowing route; later catch-alls are themselves shadowed.
+- L02 requires the catch-all to be Final (a non-Final catch-all only clones) and at least one enabled route above it, so a fresh group's lone Default route doesn't fire.
+- L03 counts Chain function (`conf.processor`) references and exempts shipped default and sample pipelines (provisional list, to confirm from the clean fixture). Collector jobs aren't read; the fix text says so.
+- L04 stands down entirely when any enabled route uses an output expression, and the Linter tab says why.
+- L07 checks eval assignments to secret-named fields with a quoted literal, `key=value` patterns, and known token formats (AWS, GitHub, Slack, Bearer, JWT). Candidates need letters plus digits to avoid matching field references. Evidence shows at most the first 4 characters.
+- L08 checks conf keys `regex`/`matchRegex` (including `regexList` and mask rules) for a leading `.*` or `.*?`, also inside opening groups.
 
 ## Tooling
 

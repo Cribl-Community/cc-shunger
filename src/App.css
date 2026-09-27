@@ -191,3 +191,135 @@
   padding-top: token('spacing.lg');
   border-top: 1px dashed token('color.border.neutral.subtle');
 }
+
+/* Linter */
+.stat--error .stat-value {
+  color: token('color.foreground.danger.default');
+}
+
+.stat--warning .stat-value {
+  color: token('color.foreground.warning.default');
+}
+
+.stat--info .stat-value {
+  color: token('color.foreground.info.default');
+}
+
+.finding {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  padding: token('spacing.md') token('spacing.lg');
+  border: 1px solid token('color.border.neutral.subtle');
+  border-left-width: 4px;
+  border-radius: token('radius.md');
+  background: token('color.background.panel.solid');
+}
+
+.finding--error {
+  border-left-color: token('color.border.danger.strong');
+}
+
+.finding--warning {
+  border-left-color: token('color.border.warning.strong');
+}
+
+.finding--info {
+  border-left-color: token('color.border.info.strong');
+}
+
+.finding-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: token('spacing.sm');
+}
+
+.finding-title {
+  font: token('typography.body.md.semibold');
+  color: token('color.foreground.default');
+}
+
+.finding-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: token('spacing.sm');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.subtle');
+}
+
+.rule-reference summary {
+  cursor: pointer;
+  font: token('typography.body.md.semibold');
+  color: token('color.foreground.default');
+}
+
+.rule-reference dl {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.md');
+  margin-top: token('spacing.md');
+}
+
+.rule-ref dt {
+  font: token('typography.body.md.semibold');
+  color: token('color.foreground.default');
+}
+
+.rule-ref dd {
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.subtle');
+}
+
+/* Object drawer */
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.md');
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: token('spacing.md');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.default');
+}
+
+.kv-label {
+  color: token('color.foreground.subtle');
+}
+
+.fn-list {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  list-style: none;
+}
+
+.fn {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.xs');
+  padding: token('spacing.sm') token('spacing.md');
+  border: 1px solid token('color.border.neutral.subtle');
+  border-radius: token('radius.md');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.default');
+}
+
+.fn.is-flagged {
+  border-color: token('color.border.danger.strong');
+  background: token('color.background.danger.subtle');
+}
+
+.fn-head {
+  display: flex;
+  align-items: center;
+  gap: token('spacing.sm');
+}
+
+.fn-desc {
+  color: token('color.foreground.subtle');
+}

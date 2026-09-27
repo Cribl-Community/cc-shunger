@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Button, Table, Tag, Text, defineColumns } from '@capra/core';
 import type { ReferenceGraph } from '../model/graph';
+import type { Finding } from '../lint/types';
 import type { Inventory } from '../model/types';
 import { buildAsBuilt, type DestinationRow, type PackRow, type PipelineRow, type RouteRow, type SourceRow } from '../report/asBuilt';
 import { layoutFlow } from '../report/flowLayout';
@@ -11,6 +12,7 @@ import FlowDiagram from './FlowDiagram';
 interface Props {
   inventory: Inventory;
   graph: ReferenceGraph;
+  findings: Finding[];
 }
 
 const yesNo = (v: unknown) => (v ? 'Yes' : 'No');
@@ -75,7 +77,7 @@ function Stat({ label, value, detail }: { label: string; value: number; detail?:
   );
 }
 
-export default function AsBuiltTab({ inventory, graph }: Props) {
+export default function AsBuiltTab({ inventory, graph, findings }: Props) {
   const report = useMemo(() => buildAsBuilt(inventory, graph), [inventory, graph]);
   const layout = useMemo(() => layoutFlow(inventory, graph), [inventory, graph]);
   const s = report.summary;
@@ -83,7 +85,7 @@ export default function AsBuiltTab({ inventory, graph }: Props) {
   const exportMarkdown = () => {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 16).replace(/[-:T]/g, '');
-    downloadText(`as-built-${inventory.group}-${stamp}.md`, toMarkdown(report, graph.flows, now), 'text/markdown');
+    downloadText(`as-built-${inventory.group}-${stamp}.md`, toMarkdown(report, graph.flows, now, findings), 'text/markdown');
   };
 
   // Capra Table requires string/number ids; rows already carry them.

@@ -68,6 +68,7 @@ const KIND_LABEL: Record<Ref['kind'], string> = {
   destination: 'destination',
   router: 'router',
   alias: 'default alias',
+  chain: 'chained from',
 };
 
 export function describeRefs(refs: Ref[] | undefined, inv: Inventory): string {

@@ -1,6 +1,7 @@
 // As-Built view model -> Markdown handoff document. Includes a Mermaid flowchart, which renders
 // on GitHub, GitLab, Confluence (with the Mermaid macro), and most Markdown editors.
 import type { Flow } from '../model/graph';
+import type { Finding } from '../lint/types';
 import type { AsBuilt } from './asBuilt';
 
 /**
@@ -68,7 +69,29 @@ export function mermaid(report: AsBuilt, flows: Flow[]): string {
   return lines.join('\n');
 }
 
-export function toMarkdown(report: AsBuilt, flows: Flow[], generatedAt: Date): string {
+const SEVERITY_LABEL = { error: 'Error', warning: 'Warning', info: 'Info' } as const;
+
+function findingsSection(findings: Finding[]): string[] {
+  const out = ['## Findings', ''];
+  if (!findings.length) return [...out, '_No findings: all lint rules passed._', ''];
+  const count = (sev: Finding['severity']) => findings.filter((f) => f.severity === sev).length;
+  out.push(`${count('error')} errors, ${count('warning')} warnings, ${count('info')} info. Secrets are masked.`, '');
+  out.push(
+    table(
+      ['Severity', 'Rule', 'Object', 'Finding', 'Fix'],
+      findings.map((f) => [
+        SEVERITY_LABEL[f.severity],
+        f.ruleId,
+        cell(`${f.object.kind} ${f.object.name ?? f.object.id}`),
+        cell(f.message + (f.evidence ? ` (${f.evidence})` : '')),
+        cell(f.fix),
+      ]),
+    ),
+  );
+  return out;
+}
+
+export function toMarkdown(report: AsBuilt, flows: Flow[], generatedAt: Date, findings?: Finding[]): string {
   const s = report.summary;
   const out: string[] = [];
   out.push(`# As-Built: ${report.group}`);
@@ -92,6 +115,7 @@ export function toMarkdown(report: AsBuilt, flows: Flow[], generatedAt: Date): s
       ],
     ),
   );
+  if (findings) out.push(...findingsSection(findings));
   out.push('## Data flow');
   out.push('');
   out.push('Solid arrows go through the Routing table; dotted arrows are QuickConnect. Disabled objects are omitted.');
