@@ -8,6 +8,7 @@ import type { Finding, ObjectRef, Severity } from '../lint/types';
 import { applySuppressions } from '../store/suppressions';
 import FixL01Modal from './FixL01Modal';
 import ObjectDrawer from './ObjectDrawer';
+import { useHostTheme } from './theme';
 import type { SuppressionsApi } from './useSuppressions';
 
 interface Props {
@@ -111,6 +112,7 @@ function FindingCard({ f, onOpen, onSuppress, onFix }: CardProps) {
 
 export default function LinterTab({ inventory, graph, findings, suppressions, onConfigChanged }: Props) {
   const [open, setOpen] = useState<{ object: ObjectRef; location?: string } | null>(null);
+  const theme = useHostTheme();
   const [fixPlan, setFixPlan] = useState<L01FixPlan | null>(null);
   const [unsuppressError, setUnsuppressError] = useState<string>();
   const { active, suppressed, stale } = applySuppressions(findings, suppressions.doc);
@@ -159,6 +161,7 @@ export default function LinterTab({ inventory, graph, findings, suppressions, on
 
       {active.length === 0 && (
         <EmptyState
+          theme={theme}
           illustration="Celebration"
           title="No open findings"
           description={

@@ -5,6 +5,7 @@ import { redactInventory } from '../model/redact';
 import type { Inventory } from '../model/types';
 import { deleteSnapshot, listSnapshots, loadSnapshot, saveSnapshot, type SnapshotMeta } from '../store/snapshots';
 import DiffView from './DiffView';
+import { useHostTheme } from './theme';
 
 interface Props {
   inventory: Inventory;
@@ -18,6 +19,7 @@ const when = (iso: string) => new Date(iso).toLocaleString();
 
 export default function SnapshotsTab({ inventory }: Props) {
   const group = inventory.group;
+  const theme = useHostTheme();
   const [list, setList] = useState<ListState>({ state: 'loading' });
   const [label, setLabel] = useState('');
   const [taking, setTaking] = useState(false);
@@ -127,7 +129,7 @@ export default function SnapshotsTab({ inventory }: Props) {
           </Alert>
         )}
         {list.state === 'ready' && items.length === 0 && (
-          <EmptyState illustration="EmptyFolder" title="No snapshots yet" description={`Take one to start a change log for ${group}.`} />
+          <EmptyState theme={theme} illustration="EmptyFolder" title="No snapshots yet" description={`Take one to start a change log for ${group}.`} />
         )}
         {items.length > 0 && (
           <ul className="snapshot-list">

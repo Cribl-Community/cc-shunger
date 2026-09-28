@@ -7,6 +7,7 @@ import AsBuiltTab from './ui/AsBuiltTab';
 import GroupPicker from './ui/GroupPicker';
 import LinterTab from './ui/LinterTab';
 import SnapshotsTab from './ui/SnapshotsTab';
+import { useHostTheme } from './ui/theme';
 import { useSuppressions } from './ui/useSuppressions';
 import { useInventory } from './ui/useInventory';
 
@@ -22,6 +23,7 @@ type Tab = 'asbuilt' | 'linter' | 'snapshots';
 
 
 function App() {
+  const theme = useHostTheme();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [groupId, setGroupId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -86,7 +88,7 @@ function App() {
         )}
 
         {load.state === 'ready' && load.groups.length === 0 && (
-          <EmptyState title="No Stream Worker Groups" description="This workspace has no Stream Worker Groups you can read." />
+          <EmptyState theme={theme} title="No Stream Worker Groups" description="This workspace has no Stream Worker Groups you can read." />
         )}
 
         {group && (
@@ -109,6 +111,12 @@ function App() {
                 {inv.message}
               </Alert>
             )}
+            {inv.state === 'ready' &&
+              inv.warnings.map((w) => (
+                <Alert key={w} appearance="warning">
+                  {w}
+                </Alert>
+              ))}
             {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} findings={split.active} suppressed={split.suppressed} />}
             {inv.state === 'ready' && tab === 'linter' && (
               <LinterTab

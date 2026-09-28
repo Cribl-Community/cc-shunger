@@ -17,6 +17,7 @@
 ## Build and test tools (not bundled)
 
 - Vite, @vitejs/plugin-react, TypeScript, Vitest, oxlint (MIT / Apache-2.0)
+- secretlint (MIT), run via npx for the pre-release secrets scan
 
 ## Reference apps consulted (no code copied)
 

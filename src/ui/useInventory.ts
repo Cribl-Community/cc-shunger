@@ -8,7 +8,7 @@ export type InventoryState =
   | { state: 'idle' }
   | { state: 'loading'; group: string }
   | { state: 'error'; group: string; message: string }
-  | { state: 'ready'; group: string; inventory: Inventory; graph: ReferenceGraph; loadedAt: Date };
+  | { state: 'ready'; group: string; inventory: Inventory; graph: ReferenceGraph; loadedAt: Date; warnings: string[] };
 
 /** Loads and normalizes one Worker Group's config; `reload` re-fetches the same group. */
 export function useInventory(group: string | null): [InventoryState, () => void] {
@@ -21,7 +21,7 @@ export function useInventory(group: string | null): [InventoryState, () => void]
     fetchRawConfig(group, ctrl.signal)
       .then((raw) => {
         const inventory = normalize(raw);
-        setResult({ state: 'ready', group, inventory, graph: buildGraph(inventory), loadedAt: new Date() });
+        setResult({ state: 'ready', group, inventory, graph: buildGraph(inventory), loadedAt: new Date(), warnings: raw.warnings ?? [] });
       })
       .catch((e: unknown) => {
         if (!ctrl.signal.aborted) setResult({ state: 'error', group, message: String(e) });

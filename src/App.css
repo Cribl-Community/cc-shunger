@@ -527,8 +527,8 @@
 }
 
 .compare-pickers {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 400px));
   gap: token('spacing.lg');
 }
 

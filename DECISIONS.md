@@ -63,6 +63,11 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - L01 fix-it: the shadowing route moves to just above the next enabled Final catch-all (or to the end). The write re-fetches the raw table, refuses if its order changed since load, preserves every raw field, and never commits or deploys. It's the app's only config write (`PATCH /m/:gid/routes/*`).
 - The demo's `catch_all_early` now sends to devnull, so L01 and L02 tell one story. After the fix L02 remains true, and the demo shows suppressing it with a reason.
 
+## Polish (Phase 5)
+
+- Packs are optional when loading a group. A failed `/packs` read (e.g. no permission) produces a warning, not an error; the other four collections are required.
+- The host theme is kept in React context (`ui/theme.ts`) so Capra EmptyState illustrations switch with light and dark mode. The `.dark` body class still drives all CSS tokens.
+
 ## Tooling
 
 - Worker Groups come from `GET /master/groups?product=stream&fields=git.localChanges`. The same call returns the uncommitted-change count for the banner, so `/version/status` isn't needed.
@@ -74,7 +79,7 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 
 - Fixtures: `node scripts/sanitize-fixtures.mjs <raw> <out>` keeps only the 5 config endpoints, redacts secret-named fields (a plaintext HEC token was present), rewrites IPs/hostnames, and refuses to write if any IP, non-Cribl hostname, or UUID survives.
 
-- Phase 0 fixtures are pulled through the app itself (`src/dev/Phase0Probe.tsx`) in Live Preview, not with API credentials. Probe page is removed before 1.0.0.
+- Phase 0 fixtures are pulled through the app itself (`src/dev/Phase0Probe.tsx`) in Live Preview, not with API credentials. The probe and the demo seeder are kept as dev-only tools (they rebuild fixtures and the demo). An `import.meta.env.DEV` guard excludes them from production builds, and a grep of `dist/` confirms it.
 - In-app confirmations use an inline two-step button, not `window.confirm`, since the iframe sandbox attributes are undocumented.
 - `openapi.json` (9.9 MB, workspace-generated) is git-ignored; regenerate via the scaffold command.
 - `npm audit`: 2 moderate advisories in esbuild ≤0.24 nested under `@cribl/apps` (dev-server only, no upstream fix). Accepted.

@@ -5,6 +5,8 @@
 export interface RawConfig {
   group: string;
   criblVersion?: string;
+  /** Optional collections that couldn't be read (e.g. no permission); treated as empty. */
+  warnings?: string[];
   routes: unknown[];
   pipelines: unknown[];
   inputs: unknown[];
