@@ -2,6 +2,7 @@
 // on GitHub, GitLab, Confluence (with the Mermaid macro), and most Markdown editors.
 import type { Flow } from '../model/graph';
 import type { Finding } from '../lint/types';
+import type { Suppression } from '../store/suppressions';
 import type { AsBuilt } from './asBuilt';
 
 /**
@@ -71,9 +72,36 @@ export function mermaid(report: AsBuilt, flows: Flow[]): string {
 
 const SEVERITY_LABEL = { error: 'Error', warning: 'Warning', info: 'Info' } as const;
 
-function findingsSection(findings: Finding[]): string[] {
+export interface SuppressedFinding {
+  finding: Finding;
+  suppression: Suppression;
+}
+
+function suppressedSection(items: SuppressedFinding[]): string[] {
+  if (!items.length) return [];
+  return [
+    '### Suppressed findings',
+    '',
+    'Reviewed and accepted. Kept here so the decision is part of the record.',
+    '',
+    table(
+      ['Rule', 'Object', 'Reason', 'By', 'When'],
+      items.map(({ finding: f, suppression: s }) => [
+        f.ruleId,
+        cell(`${f.object.kind} ${f.object.name ?? f.object.id}`),
+        cell(s.reason),
+        cell(s.by ?? '—'),
+        s.at.slice(0, 10),
+      ]),
+    ),
+  ];
+}
+
+function findingsSection(findings: Finding[], suppressed: SuppressedFinding[]): string[] {
   const out = ['## Findings', ''];
-  if (!findings.length) return [...out, '_No findings: all lint rules passed._', ''];
+  if (!findings.length) {
+    return [...out, `_No open findings: all lint rules passed${suppressed.length ? ' or were suppressed' : ''}._`, '', ...suppressedSection(suppressed)];
+  }
   const count = (sev: Finding['severity']) => findings.filter((f) => f.severity === sev).length;
   out.push(`${count('error')} errors, ${count('warning')} warnings, ${count('info')} info. Secrets are masked.`, '');
   out.push(
@@ -88,10 +116,16 @@ function findingsSection(findings: Finding[]): string[] {
       ]),
     ),
   );
-  return out;
+  return [...out, ...suppressedSection(suppressed)];
 }
 
-export function toMarkdown(report: AsBuilt, flows: Flow[], generatedAt: Date, findings?: Finding[]): string {
+export function toMarkdown(
+  report: AsBuilt,
+  flows: Flow[],
+  generatedAt: Date,
+  findings?: Finding[],
+  suppressed: SuppressedFinding[] = [],
+): string {
   const s = report.summary;
   const out: string[] = [];
   out.push(`# As-Built: ${report.group}`);
@@ -115,7 +149,7 @@ export function toMarkdown(report: AsBuilt, flows: Flow[], generatedAt: Date, fi
       ],
     ),
   );
-  if (findings) out.push(...findingsSection(findings));
+  if (findings) out.push(...findingsSection(findings, suppressed));
   out.push('## Data flow');
   out.push('');
   out.push('Solid arrows go through the Routing table; dotted arrows are QuickConnect. Disabled objects are omitted.');

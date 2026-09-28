@@ -2,9 +2,12 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, EmptyState, Spinner, TabNav, Text } from '@capra/core';
 import { listWorkerGroups, type WorkerGroup } from './api/groups';
 import { lint } from './lint/runner';
+import { applySuppressions } from './store/suppressions';
 import AsBuiltTab from './ui/AsBuiltTab';
 import GroupPicker from './ui/GroupPicker';
 import LinterTab from './ui/LinterTab';
+import SnapshotsTab from './ui/SnapshotsTab';
+import { useSuppressions } from './ui/useSuppressions';
 import { useInventory } from './ui/useInventory';
 
 // Dev-only tools (demo seeder, Phase 0 probe); the DEV guard lets Vite drop them from production.
@@ -25,10 +28,12 @@ function App() {
   const [tab, setTab] = useState<Tab>('asbuilt');
   const [showDev, setShowDev] = useState(false);
   const [inv, reloadInventory] = useInventory(groupId);
+  const suppressions = useSuppressions(groupId);
   const findings = useMemo(() => (inv.state === 'ready' ? lint(inv.inventory, inv.graph) : []), [inv]);
+  const split = useMemo(() => applySuppressions(findings, suppressions.doc), [findings, suppressions.doc]);
   const tabs = [
     { key: 'asbuilt', name: 'As-Built' },
-    { key: 'linter', name: inv.state === 'ready' ? `Linter (${findings.length})` : 'Linter' },
+    { key: 'linter', name: inv.state === 'ready' && !suppressions.loading ? `Linter (${split.active.length})` : 'Linter' },
     { key: 'snapshots', name: 'Snapshots' },
   ];
 
@@ -104,13 +109,17 @@ function App() {
                 {inv.message}
               </Alert>
             )}
-            {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} findings={findings} />}
+            {inv.state === 'ready' && tab === 'asbuilt' && <AsBuiltTab inventory={inv.inventory} graph={inv.graph} findings={split.active} suppressed={split.suppressed} />}
             {inv.state === 'ready' && tab === 'linter' && (
-              <LinterTab inventory={inv.inventory} graph={inv.graph} findings={findings} />
+              <LinterTab
+                inventory={inv.inventory}
+                graph={inv.graph}
+                findings={findings}
+                suppressions={suppressions}
+                onConfigChanged={reloadInventory}
+              />
             )}
-            {inv.state === 'ready' && tab === 'snapshots' && (
-              <EmptyState title="Snapshots" description="Coming in Phase 4." />
-            )}
+            {inv.state === 'ready' && tab === 'snapshots' && <SnapshotsTab key={inv.group} inventory={inv.inventory} />}
           </>
         )}
 

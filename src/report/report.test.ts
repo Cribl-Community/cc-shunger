@@ -128,6 +128,17 @@ describe('markdown', () => {
     expect(md).not.toContain('FAKE0000blueprint');
     expect(md.indexOf('## Findings')).toBeLessThan(md.indexOf('## Data flow'));
   });
+
+  it('lists suppressed findings with their reasons', () => {
+    const inv = normalize(demoRaw());
+    const graph = buildGraph(inv);
+    const [first, ...rest] = lint(inv, graph);
+    const md = toMarkdown(buildAsBuilt(inv, graph), graph.flows, new Date(0), rest, [
+      { finding: first, suppression: { reason: 'Accepted: a|b', by: 'steve', at: '2026-09-28T00:00:00Z', message: first.message } },
+    ]);
+    expect(md).toContain('### Suppressed findings');
+    expect(md).toContain('| L01 | route catch_all_early | Accepted: a\\|b | steve | 2026-09-28 |');
+  });
 });
 
 describe('demo seed', () => {

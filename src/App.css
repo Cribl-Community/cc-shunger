@@ -385,3 +385,207 @@
   border-color: token('color.border.info.strong');
   border-radius: 0;
 }
+
+/* Suppressions */
+.finding-actions {
+  display: inline-flex;
+  gap: token('spacing.sm');
+  margin-left: auto;
+}
+
+.suppress-form {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  max-width: 560px;
+  padding-top: token('spacing.sm');
+  border-top: 1px dashed token('color.border.neutral.subtle');
+}
+
+.suppress-actions,
+.modal-actions,
+.snapshot-actions {
+  display: flex;
+  gap: token('spacing.sm');
+}
+
+.modal-actions {
+  justify-content: flex-end;
+}
+
+.suppressed-list {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  margin-top: token('spacing.md');
+}
+
+.suppressed {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.xs');
+  padding: token('spacing.sm') token('spacing.md');
+  border: 1px solid token('color.border.neutral.subtle');
+  border-radius: token('radius.md');
+}
+
+.suppressed.is-stale {
+  border-style: dashed;
+}
+
+/* Fix-it preview and route order */
+.fix-body {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.md');
+}
+
+.order-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: token('spacing.lg');
+}
+
+.order ol {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.xs');
+  margin-top: token('spacing.sm');
+  list-style: none;
+}
+
+.order-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: token('spacing.xs') token('spacing.sm');
+  border: 1px solid token('color.border.neutral.subtle');
+  border-radius: token('radius.md');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.default');
+}
+
+.order-item.is-moved {
+  border-color: token('color.border.accent.strong');
+  background: token('color.background.accent.subtle');
+}
+
+.order-item.is-focus {
+  border-width: 2px;
+}
+
+.order-item.is-disabled {
+  opacity: 0.55;
+}
+
+.order-name {
+  font: token('typography.body.sm.semibold');
+}
+
+.order-meta {
+  color: token('color.foreground.subtle');
+}
+
+/* Snapshots */
+.snapshot-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: token('spacing.md');
+}
+
+.snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  list-style: none;
+}
+
+.snapshot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: token('spacing.md');
+  padding: token('spacing.sm') token('spacing.md');
+  border: 1px solid token('color.border.neutral.subtle');
+  border-radius: token('radius.md');
+}
+
+.snapshot > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.snapshot-label {
+  font: token('typography.body.md.semibold');
+  color: token('color.foreground.default');
+}
+
+.snapshot-meta {
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.subtle');
+}
+
+.compare-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: token('spacing.lg');
+}
+
+/* Diff */
+.diff {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.lg');
+}
+
+.diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: token('spacing.md');
+}
+
+.diff-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: token('spacing.xs');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.default');
+}
+
+.diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: token('spacing.sm');
+  list-style: none;
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.default');
+}
+
+.field-diff {
+  margin: token('spacing.xs') 0 0 token('spacing.lg');
+  border-collapse: collapse;
+}
+
+.field-diff th {
+  padding-right: token('spacing.md');
+  text-align: left;
+  font: token('typography.body.sm.semibold');
+  color: token('color.foreground.subtle');
+}
+
+.field-diff td {
+  padding: 2px token('spacing.xs');
+}
+
+.field-diff .before code {
+  color: token('color.foreground.danger.default');
+}
+
+.field-diff .after code {
+  color: token('color.foreground.success.default');
+}
+
+.field-diff .arrow {
+  color: token('color.foreground.subtle');
+}
