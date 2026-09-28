@@ -103,7 +103,8 @@ function findingsSection(findings: Finding[], suppressed: SuppressedFinding[]): 
     return [...out, `_No open findings: all lint rules passed${suppressed.length ? ' or were suppressed' : ''}._`, '', ...suppressedSection(suppressed)];
   }
   const count = (sev: Finding['severity']) => findings.filter((f) => f.severity === sev).length;
-  out.push(`${count('error')} errors, ${count('warning')} warnings, ${count('info')} info. Secrets are masked.`, '');
+  const n = (k: number, word: string) => `${k} ${word}${k === 1 ? '' : 's'}`;
+  out.push(`${n(count('error'), 'error')}, ${n(count('warning'), 'warning')}, ${count('info')} info. Secrets are masked.`, '');
   out.push(
     table(
       ['Severity', 'Rule', 'Object', 'Finding', 'Fix'],

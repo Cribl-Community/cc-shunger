@@ -133,6 +133,7 @@ describe('markdown', () => {
     const inv = normalize(demoRaw());
     const graph = buildGraph(inv);
     const [first, ...rest] = lint(inv, graph);
+    expect(toMarkdown(buildAsBuilt(inv, graph), graph.flows, new Date(0), rest)).toContain('1 error, 4 warnings, 2 info.');
     const md = toMarkdown(buildAsBuilt(inv, graph), graph.flows, new Date(0), rest, [
       { finding: first, suppression: { reason: 'Accepted: a|b', by: 'steve', at: '2026-09-28T00:00:00Z', message: first.message } },
     ]);
