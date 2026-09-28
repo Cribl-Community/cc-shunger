@@ -34,7 +34,7 @@ Re-running is safe: it converges the group back to the seed.
 | Seeded object | Rule |
 | --- | --- |
 | Route 2 `catch_all_early` is Final with filter `true` | L01 |
-| Default route outputs to `default`, which resolves to devnull | L02 |
+| The same route sends everything unmatched to devnull | L02 (still true after the L01 fix; suppress it with a reason in the demo) |
 | Pipeline `legacy_cleanup` is referenced by nothing | L03 |
 | Destination `old_s3_archive` is referenced by nothing | L04 |
 | Destination `splunk_example` has backpressure set to drop | L05 |

@@ -177,8 +177,8 @@ Extra Worker Groups need Cribl Enterprise, so the demo uses the `default` group 
 
 | Seeded problem | Should trigger |
 | --- | --- |
-| Route 2 of 5 is Final with filter `true` | L01 |
-| Default route outputs to devnull | L02 |
+| Route 2 of 6, `catch_all_early`, is Final with filter `true` | L01 |
+| `catch_all_early` sends to devnull | L02 |
 | Pipeline `legacy_cleanup` not used anywhere | L03 |
 | Destination `old_s3_archive` not referenced by any route | L04 |
 | Destination `splunk_example` with backpressure behavior set to drop | L05 |
@@ -214,7 +214,7 @@ The demo runs about three minutes on the demo workspace's `default` group and sh
 2. **As-Built (40 s):** open the demo workspace's `default` group, show the flow diagram, then export the Markdown report. "That's the as-built doc consultants usually write by hand."
 3. **Take a snapshot (10 s):** label it "before".
 4. **Linter (60 s):** show the error count. Open L01: route 2 swallows everything, so routes 3–5 never run. Show L07's masked fake token.
-5. **Fix (30 s):** apply the L01 fix-it with preview and confirm. If fix-its were cut, make the change by hand in Routes instead.
+5. **Fix (30 s):** apply the L01 fix-it with preview and confirm. L02 remains, so suppress it with a reason ("Intentional: unmatched data is discarded") to show that decisions are recorded.
 6. **Diff (20 s):** take an "after" snapshot and show the route-order change in the diff.
 7. **Close (10 s):** "Installs from one package, no credentials, Apache-2.0." One line on how it complements Config Quest.
 

@@ -48,11 +48,20 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 
 - One file per rule in `src/lint/rules/`, pure functions of Inventory + reference graph. The runner assigns severity and a stable key, `<rule>/<kind>/<id>[/<detail>]`, which suppressions will use.
 - L01 reports only the first shadowing route; later catch-alls are themselves shadowed.
-- L02 requires the catch-all to be Final (a non-Final catch-all only clones) and at least one enabled route above it, so a fresh group's lone Default route doesn't fire.
+- L02 only considers the first enabled Final catch-all, the only reachable one (a non-Final catch-all only clones), and needs at least one enabled route above it, so a fresh group's lone Default route doesn't fire. Earlier versions also flagged an unreachable Default route below another catch-all, which was a false positive.
+- L01 counts only shadowed routes with specific filters. A catch-all below a catch-all is redundant, not lost logic, and counting it made the fix-it unable to clear L01.
 - L03 counts Chain function (`conf.processor`) references and exempts the 9 pipelines a fresh 4.20 group ships with (confirmed from the demo workspace before seeding: passthru, main, devnull, cribl_metrics_rollup, prometheus_metrics, cisco_asa, cisco_estreamer, palo_alto_traffic, wineventlogs). Collector jobs aren't read; the fix text says so.
 - L04 stands down entirely when any enabled route uses an output expression, and the Linter tab says why.
 - L07 checks eval assignments to secret-named fields with a quoted literal, `key=value` patterns, and known token formats (AWS, GitHub, Slack, Bearer, JWT). Candidates need letters plus digits to avoid matching field references. Evidence shows at most the first 4 characters.
 - L08 checks conf keys `regex`/`matchRegex` (including `regexList` and mask rules) for a leading `.*` or `.*?`, also inside opening groups.
+
+## Snapshots, suppressions, fix-it (Phase 4)
+
+- Snapshots are the normalized Inventory, redacted with L07's detector (the secret is replaced by its first 4 characters plus an 8-hex FNV-1a fingerprint, so diffs still notice a changed secret). Chunks are written first and meta last; listing only shows snapshots with meta.
+- "Compare against current config" redacts the live inventory the same way, so masked values compare like-for-like.
+- Suppressions are one document per group (`suppress/<group>`), keyed by the stable finding key. Each write re-reads the document to merge concurrent edits. Stale suppressions are shown and removable.
+- L01 fix-it: the shadowing route moves to just above the next enabled Final catch-all (or to the end). The write re-fetches the raw table, refuses if its order changed since load, preserves every raw field, and never commits or deploys. It's the app's only config write (`PATCH /m/:gid/routes/*`).
+- The demo's `catch_all_early` now sends to devnull, so L01 and L02 tell one story. After the fix L02 remains true, and the demo shows suppressing it with a reason.
 
 ## Tooling
 
