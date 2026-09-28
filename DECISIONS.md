@@ -70,6 +70,8 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 
 ## Tooling
 
+- There is no app-icon field in the Apps docs, `@cribl/apps`, or the Marketplace README template. The scaffold's `public/favicon.svg` (the Vite logo) was replaced with a Blueprint glyph, and its unused social-icon sprite `public/icons.svg` was removed, so the package ships no third-party marks.
+
 - Worker Groups come from `GET /master/groups?product=stream&fields=git.localChanges`. The same call returns the uncommitted-change count for the banner, so `/version/status` isn't needed.
 - Groups are filtered to `type === "stream"`, or `!isFleet && !isSearch` on older Leaders. Edge and Search are out of scope.
 - `config/policies.yml` declares only the GET paths the app calls. `/system/info` was removed after Phase 0.
