@@ -1,4 +1,5 @@
 import { functionLabel, realPipelines, walkStrings } from '../helpers';
+import type { PipelineFunction } from '../../model/types';
 import type { Rule, RuleHit } from '../types';
 
 /** Field or key names that suggest a credential. */
@@ -43,6 +44,45 @@ const excerpt = (text: string, secret: string) => {
   return masked.length > 80 ? `${masked.slice(0, 77)}…` : masked;
 };
 
+export interface SecretHit {
+  path: string;
+  secret: string;
+  /** The text the secret was found in, for building a masked excerpt. */
+  text: string;
+}
+
+/** Every suspected secret in one pipeline function (eval assignments first, then patterns). */
+export function secretsInFunction(fn: PipelineFunction): SecretHit[] {
+  const hits: SecretHit[] = [];
+  const seen = new Set<string>();
+  const add = (hit: SecretHit) => {
+    if (seen.has(hit.secret)) return;
+    seen.add(hit.secret);
+    hits.push(hit);
+  };
+  // Eval-style assignments: { name: 'api_key', value: "'abc123...'" }
+  walkStrings(fn.conf, (path, key, s) => {
+    if (key !== 'value') return;
+    const name = path.replace(/\.value$/, '.name');
+    const nameValue = name.split(/[.[\]]/).filter(Boolean).reduce<unknown>(
+      (o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined),
+      fn.conf,
+    );
+    const literal = QUOTED_LITERAL.exec(s);
+    if (literal && typeof nameValue === 'string' && SECRET_NAME.test(nameValue) && !literal[2].includes('${')) {
+      const secret = literal[2];
+      if (secret.length >= 8 && looksRandom(secret)) add({ path, secret, text: `${nameValue} = ${s}` });
+    }
+  });
+  const check = (path: string, text: string) => {
+    const secret = findSecret(text);
+    if (secret) add({ path, secret, text });
+  };
+  if (fn.filter) check('filter', fn.filter);
+  walkStrings(fn.conf, (path, _key, s) => check(path, s));
+  return hits;
+}
+
 export const L07: Rule = {
   id: 'L07',
   title: 'Possible hardcoded secret',
@@ -53,28 +93,7 @@ export const L07: Rule = {
     const hits: RuleHit[] = [];
     for (const p of realPipelines(inv.pipelines)) {
       p.functions.forEach((fn, i) => {
-        let found: { path: string; secret: string; text: string } | undefined;
-        const check = (path: string, text: string) => {
-          if (found) return;
-          const secret = findSecret(text);
-          if (secret) found = { path, secret, text };
-        };
-        // Eval-style assignments: { name: 'api_key', value: "'abc123...'" }
-        walkStrings(fn.conf, (path, key, s) => {
-          if (found || key !== 'value') return;
-          const name = path.replace(/\.value$/, '.name');
-          const nameValue = name.split(/[.[\]]/).filter(Boolean).reduce<unknown>(
-            (o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined),
-            fn.conf,
-          );
-          const literal = QUOTED_LITERAL.exec(s);
-          if (literal && typeof nameValue === 'string' && SECRET_NAME.test(nameValue) && !literal[2].includes('${')) {
-            const secret = literal[2];
-            if (secret.length >= 8 && looksRandom(secret)) found = { path, secret, text: `${nameValue} = ${s}` };
-          }
-        });
-        if (fn.filter) check('filter', fn.filter);
-        walkStrings(fn.conf, (path, _key, s) => check(path, s));
+        const [found] = secretsInFunction(fn);
         if (!found) return;
         hits.push({
           object: { kind: 'pipeline', id: p.id },

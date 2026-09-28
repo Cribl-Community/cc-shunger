@@ -84,7 +84,7 @@ describe('layoutFlow', () => {
     expect(l.nodes.some((n) => n.id === 'main')).toBe(false);
     const node = (key: string) => l.nodes.find((n) => n.key === key)!;
     expect(node('pipeline:passthru').severity).toBeUndefined(); // used built-ins stay visible
-    expect(node('route:catch_all_early')).toMatchObject({ severity: 'error', findingCount: 1 });
+    expect(node('route:catch_all_early')).toMatchObject({ severity: 'error', findingCount: 2 }); // L01 + L02
     expect(node('pipeline:legacy_cleanup')).toMatchObject({ severity: 'warning', unreferenced: true });
     expect(node('pipeline:all_disabled').severity).toBe('info');
     expect(node('route:web').severity).toBeUndefined();

@@ -8,7 +8,8 @@ policies:
   - object: '/m/:gid/routes'
     actions: ['GET']
   - object: '/m/:gid/routes/*'
-    actions: ['GET']
+    # PATCH: the L01 fix-it reorders the Routing table after an explicit preview and confirm.
+    actions: ['GET', 'PATCH']
   - object: '/m/:gid/pipelines'
     actions: ['GET']
   - object: '/m/:gid/system/inputs'

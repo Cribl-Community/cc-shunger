@@ -14,7 +14,7 @@ export interface DemoSeed {
 /** Which seeded object should trip which rule (mirrors BUILD_PLAN.md "Seeded demo Worker Group"). */
 export const EXPECTED_FINDINGS = [
   { rule: 'L01', object: 'route:catch_all_early', why: 'Final `true` route at position 2 shadows routes 3-5' },
-  { rule: 'L02', object: 'route:default', why: 'Default route resolves to devnull' },
+  { rule: 'L02', object: 'route:catch_all_early', why: 'The same route drops everything unmatched to devnull' },
   { rule: 'L03', object: 'pipeline:legacy_cleanup', why: 'Referenced by nothing' },
   { rule: 'L04', object: 'destination:old_s3_archive', why: 'Referenced by nothing' },
   { rule: 'L05', object: 'destination:splunk_example', why: 'Backpressure set to drop' },
@@ -118,7 +118,15 @@ export function demoSeed(samples: string[]): DemoSeed {
         output: 'webhook_example',
         final: true,
       },
-      { id: 'catch_all_early', name: 'catch_all_early', filter: 'true', pipeline: 'passthru', output: 'webhook_example', final: true },
+      {
+        id: 'catch_all_early',
+        name: 'catch_all_early',
+        description: 'Drop everything else (added during an incident, in the wrong place)',
+        filter: 'true',
+        pipeline: 'passthru',
+        output: 'devnull',
+        final: true,
+      },
       {
         id: 'auth_to_splunk',
         name: 'auth_to_splunk',

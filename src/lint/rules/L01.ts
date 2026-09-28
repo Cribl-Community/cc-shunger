@@ -8,12 +8,13 @@ export const L01: Rule = {
   title: 'Route shadowing',
   severity: 'error',
   rationale:
-    'Routes are evaluated top to bottom. A Final route that matches every event consumes all data, so every enabled route below it never runs.',
+    'Routes are evaluated top to bottom. A Final route that matches every event consumes all data, so every enabled route below it with a specific filter never runs.',
   run: ({ inv }) => {
     const active = inv.routes.filter(isActive);
     const shadowing = active.find((r) => r.final && isCatchAll(r.filter));
     if (!shadowing) return [];
-    const shadowed = active.filter((r) => r.index > shadowing.index);
+    // Catch-alls below a catch-all are redundant, not lost logic; only specific filters count.
+    const shadowed = active.filter((r) => r.index > shadowing.index && !isCatchAll(r.filter));
     if (!shadowed.length) return [];
     const names = shadowed.slice(0, LIST_MAX).map((r) => r.name);
     const more = shadowed.length > LIST_MAX ? ` and ${shadowed.length - LIST_MAX} more` : '';

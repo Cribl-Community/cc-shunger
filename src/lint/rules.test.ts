@@ -32,7 +32,7 @@ describe('isCatchAll', () => {
 
 describe('L01 route shadowing', () => {
   it('fires on the first Final catch-all with enabled routes below it', () => {
-    const inv = inventory({ routes: [route(0, { filter: 'x' }), route(1), route(2, { filter: 'y' }), route(3)] });
+    const inv = inventory({ routes: [route(0, { filter: 'x' }), route(1), route(2, { filter: 'y' }), route(3, { filter: 'z' }), route(4)] });
     const [f] = runRule(L01, inv, buildGraph(inv));
     expect(f.key).toBe('L01/route/r1');
     expect(f.message).toContain('2 routes below it never match: route2, route3');
@@ -43,6 +43,8 @@ describe('L01 route shadowing', () => {
     expect(keys(L01, inventory({ routes: [route(0, { final: false }), route(1, { filter: 'x' })] }))).toEqual([]);
     expect(keys(L01, inventory({ routes: [route(0), route(1, { disabled: true })] }))).toEqual([]);
     expect(keys(L01, inventory({ routes: [route(0, { disabled: true }), route(1, { filter: 'x' })] }))).toEqual([]);
+    // Only other catch-alls below: redundant, not shadowed logic.
+    expect(keys(L01, inventory({ routes: [route(0, { filter: 'x' }), route(1), route(2)] }))).toEqual([]);
   });
 });
 
@@ -60,6 +62,14 @@ describe('L02 catch-all to devnull', () => {
     });
     expect(keys(L02, keeps)).toEqual([]);
     expect(keys(L02, inventory({ routes: [route(0, { filter: 'x' }), route(1, { final: false })] }))).toEqual([]);
+  });
+
+  it('ignores a devnull catch-all that an earlier Final catch-all makes unreachable', () => {
+    const inv = inventory({
+      routes: [route(0, { filter: 'x' }), route(1, { output: 'lake' }), route(2, { output: 'default' })],
+      destinations: [destination('lake', { type: 'cribl_lake' }), destination('devnull'), destination('default', { type: 'default', defaultId: 'devnull' })],
+    });
+    expect(keys(L02, inv)).toEqual([]);
   });
 });
 
@@ -196,6 +206,7 @@ describe('lint', () => {
       EXPECTED_FINDINGS.map((e) => `${e.rule} ${e.object}`).sort(),
     );
     expect(findings.map((f) => f.severity)).toEqual(['error', 'error', 'warning', 'warning', 'warning', 'warning', 'info', 'info']);
+    expect(findings.find((f) => f.ruleId === 'L01')?.message).toContain('3 routes below it never match: auth_to_splunk, auth_parse, noisy.');
     expect(new Set(findings.map((f) => f.key)).size).toBe(findings.length);
   });
 

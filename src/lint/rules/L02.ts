@@ -6,12 +6,14 @@ export const L02: Rule = {
   title: 'Catch-all route drops unmatched data',
   severity: 'warning',
   rationale:
-    'When a Final catch-all route sends to devnull, any event that no earlier route matched is silently discarded. New sources and changed data shapes disappear without an error.',
+    'When the first Final catch-all route sends to devnull, any event that no earlier route matched is silently discarded. New sources and changed data shapes disappear without an error.',
   run: ({ inv, graph }) => {
     const byId = new Map(inv.destinations.map((d) => [d.id, d]));
     const active = inv.routes.filter(isActive);
-    return active
-      .filter((r) => r.final && isCatchAll(r.filter) && r.output !== undefined)
+    const isFinalCatchAll = (r: (typeof active)[number]) => r.final && isCatchAll(r.filter);
+    // The first Final catch-all is the only reachable one; any below it never see data.
+    const reachable = active.find(isFinalCatchAll);
+    return (reachable && reachable.output !== undefined ? [reachable] : [])
       .filter((r) => active.some((other) => other.index < r.index))
       .flatMap((r) => {
         const resolved = graph.resolveDestination(r.output!);
