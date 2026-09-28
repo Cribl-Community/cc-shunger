@@ -2,6 +2,9 @@
 //   Sources | Routes (in evaluation order) | Pipelines | Destinations
 // Sources that use the Routing table join a vertical "bus" in front of the Routes column instead
 // of drawing N x M edges. QuickConnect sources skip the Routes column and go straight to a Pipeline.
+import type { Finding, Severity } from '../lint/types';
+import { SEVERITY_ORDER } from '../lint/types';
+import { BUILTIN_PIPELINES } from '../model/builtins';
 import type { ReferenceGraph } from '../model/graph';
 import type { Inventory } from '../model/types';
 
@@ -23,8 +26,11 @@ export interface LayoutNode {
   x: number;
   y: number;
   disabled: boolean;
-  /** Referenced by nothing (drawn dimmed/dashed so orphans stand out). */
+  /** Referenced by nothing (drawn dashed so orphans stand out). */
   unreferenced: boolean;
+  /** Worst severity among lint findings on this object. */
+  severity?: Severity;
+  findingCount: number;
 }
 
 export interface LayoutEdge {
@@ -44,17 +50,26 @@ export interface FlowLayout {
   nodes: LayoutNode[];
   edges: LayoutEdge[];
   bus?: { x: number; y1: number; y2: number };
+  /** Built-in pipelines nothing uses, left out of the diagram. */
+  hiddenBuiltins: string[];
 }
 
 const colX = (i: number) => PAD + i * (NODE_W + COL_GAP);
 const rowY = (i: number) => PAD + HEADER_H + i * (NODE_H + ROW_GAP);
 const mid = (n: LayoutNode) => n.y + NODE_H / 2;
 
-export function layoutFlow(inv: Inventory, graph: ReferenceGraph): FlowLayout {
+export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Finding[] = []): FlowLayout {
   const nodes: LayoutNode[] = [];
   const index = new Map<string, LayoutNode>();
-  const add = (n: Omit<LayoutNode, 'x' | 'y'>, col: number, row: number) => {
-    const node = { ...n, x: colX(col), y: rowY(row) };
+  const byObject = new Map<string, Finding[]>();
+  for (const f of findings) {
+    const k = `${f.object.kind}:${f.object.id}`;
+    byObject.set(k, [...(byObject.get(k) ?? []), f]);
+  }
+  const add = (n: Omit<LayoutNode, 'x' | 'y' | 'severity' | 'findingCount'>, col: number, row: number) => {
+    const hits = byObject.get(n.key) ?? [];
+    const severity = hits.map((f) => f.severity).sort((a, b) => SEVERITY_ORDER[a] - SEVERITY_ORDER[b])[0];
+    const node = { ...n, x: colX(col), y: rowY(row), severity, findingCount: hits.length };
     nodes.push(node);
     index.set(node.key, node);
     return node;
@@ -90,7 +105,7 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph): FlowLayout {
         column: 'route',
         id: r.id,
         label: `${r.index + 1}. ${r.name}`,
-        sublabel: r.final ? 'Final' : 'non-Final (clones)',
+        sublabel: r.final ? 'Final' : 'non-Final',
         disabled: r.disabled,
         unreferenced: false,
       },
@@ -101,9 +116,11 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph): FlowLayout {
 
   // Pipelines and destinations in first-use order along the flows, then unreferenced ones last.
   const order = (ids: string[], all: string[]) => [...new Set([...ids, ...all])];
+  const unusedBuiltin = (id: string) => BUILTIN_PIPELINES.has(id) && !graph.pipelineRefs.has(id);
+  const hiddenBuiltins = inv.pipelines.filter((p) => !p.packId && unusedBuiltin(p.id)).map((p) => p.id);
   const pipelineIds = order(
     graph.flows.map((f) => f.pipeline),
-    inv.pipelines.filter((p) => !p.packId).map((p) => p.id),
+    inv.pipelines.filter((p) => !p.packId && !unusedBuiltin(p.id)).map((p) => p.id),
   );
   pipelineIds.forEach((id, i) => {
     const pipe = inv.pipelines.find((p) => p.id === id);
@@ -228,5 +245,6 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph): FlowLayout {
     nodes,
     edges,
     bus,
+    hiddenBuiltins,
   };
 }

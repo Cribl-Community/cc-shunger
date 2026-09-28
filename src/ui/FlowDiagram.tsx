@@ -14,6 +14,10 @@ const curve = (a: { x: number; y: number }, b: { x: number; y: number }) => {
 
 const truncate = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
 
+/** Roughly how many characters fit on one node row (body-sm text), shared by label and sublabel. */
+const ROW_CHARS = 30;
+const SUB_MAX = 12;
+
 /** Flow ids (route ids, QuickConnect source ids) that pass through a node. */
 function flowsThrough(node: LayoutNode, graph: ReferenceGraph): string[] {
   switch (node.column) {
@@ -92,6 +96,7 @@ export default function FlowDiagram({ layout, graph }: Props) {
             `flow-node--${n.column}`,
             n.disabled && 'is-disabled',
             n.unreferenced && 'is-unreferenced',
+            n.severity && `has-${n.severity}`,
             litNodes && (lit ? 'is-lit' : 'is-faded'),
           ]
             .filter(Boolean)
@@ -105,15 +110,15 @@ export default function FlowDiagram({ layout, graph }: Props) {
               onMouseLeave={() => setHovered(null)}
             >
               <title>
-                {`${n.label}${n.sublabel ? ` — ${n.sublabel}` : ''}${n.disabled ? ' (disabled)' : ''}${n.unreferenced ? ' (not referenced)' : ''}`}
+                {`${n.label}${n.sublabel ? ` — ${n.sublabel}` : ''}${n.disabled ? ' (disabled)' : ''}${n.unreferenced ? ' (not referenced)' : ''}${n.findingCount ? ` · ${n.findingCount} finding${n.findingCount === 1 ? '' : 's'} (see Linter)` : ''}`}
               </title>
               <rect width={NODE_W} height={NODE_H} rx={6} />
               <text x={10} y={NODE_H / 2} className="flow-node-label">
-                {truncate(n.label, n.sublabel ? 17 : 28)}
+                {truncate(n.label, ROW_CHARS - (n.sublabel ? Math.min(n.sublabel.length, SUB_MAX) + 2 : 0))}
               </text>
               {n.sublabel && (
                 <text x={NODE_W - 10} y={NODE_H / 2} className="flow-node-sublabel" textAnchor="end">
-                  {truncate(n.sublabel, 12)}
+                  {truncate(n.sublabel, SUB_MAX)}
                 </text>
               )}
             </g>

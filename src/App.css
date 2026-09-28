@@ -323,3 +323,65 @@
 .fn-desc {
   color: token('color.foreground.subtle');
 }
+
+/* Flow diagram: finding severity and legend */
+.flow-node.has-error rect {
+  stroke: token('color.border.danger.strong');
+  stroke-width: 2;
+}
+
+.flow-node.has-warning rect {
+  stroke: token('color.border.warning.strong');
+  stroke-width: 2;
+}
+
+.flow-node.has-info rect {
+  stroke: token('color.border.info.strong');
+  stroke-width: 2;
+}
+
+.flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: token('spacing.lg');
+  font: token('typography.body.sm.normal');
+  color: token('color.foreground.subtle');
+}
+
+.flow-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: token('spacing.xs');
+}
+
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 10px;
+  border-radius: 3px;
+  border: 2px solid token('color.border.neutral.default');
+}
+
+.swatch--error {
+  border-color: token('color.border.danger.strong');
+}
+
+.swatch--warning {
+  border-color: token('color.border.warning.strong');
+}
+
+.swatch--info {
+  border-color: token('color.border.info.strong');
+}
+
+.swatch--unreferenced {
+  border-style: dashed;
+}
+
+.swatch--quickconnect {
+  height: 0;
+  border-width: 2px 0 0;
+  border-style: dashed;
+  border-color: token('color.border.info.strong');
+  border-radius: 0;
+}

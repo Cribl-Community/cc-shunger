@@ -75,6 +75,21 @@ describe('layoutFlow', () => {
     }
   });
 
+  it('hides unused built-in pipelines and marks nodes with their worst finding', () => {
+    const inv = normalize(demoRaw());
+    const graph = buildGraph(inv);
+    const withBuiltins = { ...inv, pipelines: [...inv.pipelines, ...['main', 'cisco_asa'].map((id) => pipeline(id, ['eval']))] };
+    const l = layoutFlow(withBuiltins, buildGraph(withBuiltins), lint(inv, graph));
+    expect(l.hiddenBuiltins).toEqual(['main', 'cisco_asa']);
+    expect(l.nodes.some((n) => n.id === 'main')).toBe(false);
+    const node = (key: string) => l.nodes.find((n) => n.key === key)!;
+    expect(node('pipeline:passthru').severity).toBeUndefined(); // used built-ins stay visible
+    expect(node('route:catch_all_early')).toMatchObject({ severity: 'error', findingCount: 1 });
+    expect(node('pipeline:legacy_cleanup')).toMatchObject({ severity: 'warning', unreferenced: true });
+    expect(node('pipeline:all_disabled').severity).toBe('info');
+    expect(node('route:web').severity).toBeUndefined();
+  });
+
   it('handles a group with no routes', () => {
     const empty = inventory({ sources: [source('a')] });
     const l = layoutFlow(empty, buildGraph(empty));

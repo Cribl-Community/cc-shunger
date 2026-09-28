@@ -79,7 +79,7 @@ function Stat({ label, value, detail }: { label: string; value: number; detail?:
 
 export default function AsBuiltTab({ inventory, graph, findings }: Props) {
   const report = useMemo(() => buildAsBuilt(inventory, graph), [inventory, graph]);
-  const layout = useMemo(() => layoutFlow(inventory, graph), [inventory, graph]);
+  const layout = useMemo(() => layoutFlow(inventory, graph, findings), [inventory, graph, findings]);
   const s = report.summary;
 
   const exportMarkdown = () => {
@@ -108,8 +108,20 @@ export default function AsBuiltTab({ inventory, graph, findings }: Props) {
 
       <section className="section">
         <Text as="h2" variant="heading">Data flow</Text>
-        <Text>Hover a Route, Pipeline, or Destination to trace its path. Dashed boxes are not referenced by anything.</Text>
+        <Text>Hover a Route, Pipeline, or Destination to trace its path.</Text>
         <FlowDiagram layout={layout} graph={graph} />
+        <div className="flow-legend">
+          <span><span className="swatch swatch--error" /> Error</span>
+          <span><span className="swatch swatch--warning" /> Warning</span>
+          <span><span className="swatch swatch--info" /> Info</span>
+          <span><span className="swatch swatch--unreferenced" /> Not referenced</span>
+          <span><span className="swatch swatch--quickconnect" /> QuickConnect</span>
+          {layout.hiddenBuiltins.length > 0 && (
+            <span title={layout.hiddenBuiltins.join(', ')}>
+              {`${layout.hiddenBuiltins.length} unused built-in pipeline${layout.hiddenBuiltins.length === 1 ? '' : 's'} hidden`}
+            </span>
+          )}
+        </div>
       </section>
 
       <Section title="Routes" count={report.routes.length}>
