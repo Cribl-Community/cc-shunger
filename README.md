@@ -65,7 +65,7 @@ Blueprint complements [Config Quest](https://github.com/Cribl-Community/cc-di-co
 
 ### If The App Is Not Yet In The Cribl Marketplace
 1. Open the repository's **Releases** page.
-2. Download `cc-blueprint-1.0.0.tgz` (or the version you want).
+2. Download `cc-blueprint-1.0.1.tgz` (or the version you want).
 3. In Cribl, go to **Apps > Add App > Import from File**.
 4. Upload the `.tgz` file.
 5. Review the app details and complete installation. No other steps are needed.
@@ -242,7 +242,7 @@ Use this table as the canonical source for gallery fields. Keep the left column 
 |---|---|
 | App Name | Cribl Blueprint |
 | App ID | cc-blueprint |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Author | Steve Hunger (Presidio) |
 | Support Model | partner-built |
 | Support Label | Partner Built |
