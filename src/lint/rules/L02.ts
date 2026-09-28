@@ -26,7 +26,7 @@ export const L02: Rule = {
             object: { kind: 'route' as const, id: r.id, name: r.name },
             message: `Route ${r.index + 1} "${r.name}" catches everything the routes above it miss and sends it to devnull${via}.`,
             fix: 'Send unmatched data to a low-cost destination (object store or Lake) so new or changed data is kept and visible.',
-            evidence: `filter: ${r.filter || '(empty)'} · output: ${r.output} → ${resolved}`,
+            evidence: `filter: ${r.filter || '(empty)'} · output: ${resolved !== r.output ? `${r.output} → ${resolved}` : r.output}`,
           },
         ];
       });

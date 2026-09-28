@@ -52,6 +52,9 @@ describe('L02 catch-all to devnull', () => {
   it('fires when a Final catch-all resolves to devnull below other routes', () => {
     const inv = inventory({ routes: [route(0, { filter: 'x', output: 'lake' }), route(1, { output: 'default' })] });
     expect(keys(L02, inv)).toEqual(['L02/route/r1']);
+    expect(runRule(L02, inv, buildGraph(inv))[0].evidence).toBe('filter: true · output: default → devnull');
+    const direct = inventory({ routes: [route(0, { filter: 'x' }), route(1, { output: 'devnull' })] });
+    expect(runRule(L02, direct, buildGraph(direct))[0].evidence).toBe('filter: true · output: devnull');
   });
 
   it("does not fire for a fresh group's lone Default route or a catch-all that keeps data", () => {

@@ -488,9 +488,10 @@
 
 /* Snapshots */
 .snapshot-form {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(200px, 400px) auto;
+  align-items: end;
+  justify-content: start;
   gap: token('spacing.md');
 }
 
