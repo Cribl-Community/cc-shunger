@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { EXPECTED_FINDINGS } from '../../demo/seed';
-import { demoRaw, destination, inventory, pipeline, route, source, workspaceDefaultRaw } from '../../test/inventory';
+import { demoRaw, destination, inventory, pipeline, route, source, workspaceCleanRaw, workspaceDefaultRaw } from '../../test/inventory';
 import { buildGraph } from '../model/graph';
 import { normalize } from '../model/normalize';
 import type { Inventory, PipelineFunction } from '../model/types';
 import { isCatchAll } from './helpers';
 import { L01 } from './rules/L01';
 import { L02 } from './rules/L02';
-import { L03 } from './rules/L03';
+import { BUILTIN_PIPELINES, L03 } from './rules/L03';
 import { L04 } from './rules/L04';
 import { L05 } from './rules/L05';
 import { L06 } from './rules/L06';
@@ -197,6 +197,13 @@ describe('lint', () => {
     );
     expect(findings.map((f) => f.severity)).toEqual(['error', 'error', 'warning', 'warning', 'warning', 'warning', 'info', 'info']);
     expect(new Set(findings.map((f) => f.key)).size).toBe(findings.length);
+  });
+
+  it('finds nothing in a fresh group', () => {
+    const inv = normalize(workspaceCleanRaw);
+    expect(inv.routes).toHaveLength(1);
+    expect(inv.pipelines.map((p) => p.id).sort()).toEqual([...BUILTIN_PIPELINES].sort());
+    expect(lint(inv, buildGraph(inv))).toEqual([]);
   });
 
   it('is quiet about shipped defaults on the real workspace fixture', () => {

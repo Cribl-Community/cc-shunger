@@ -1,10 +1,13 @@
 // Test helpers: load sanitized fixtures and build small hand-made Inventories.
+import workspaceClean from './fixtures/workspace-clean.json';
 import workspaceDefault from './fixtures/workspace-default.json';
 import { demoSeed } from '../demo/seed';
 import type { Destination, Inventory, Pipeline, Route, Source } from '../src/model/types';
 import type { RawConfig } from '../src/model/types';
 
 export const workspaceDefaultRaw = workspaceDefault as unknown as RawConfig;
+/** A fresh Cribl.Cloud 4.20 workspace's `default` group, captured before seeding. */
+export const workspaceCleanRaw = workspaceClean as unknown as RawConfig;
 
 export function source(id: string, extra: Partial<Source> = {}): Source {
   return { id, type: 'datagen', disabled: false, sendToRoutes: true, connections: [], ...extra };

@@ -49,7 +49,7 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - One file per rule in `src/lint/rules/`, pure functions of Inventory + reference graph. The runner assigns severity and a stable key, `<rule>/<kind>/<id>[/<detail>]`, which suppressions will use.
 - L01 reports only the first shadowing route; later catch-alls are themselves shadowed.
 - L02 requires the catch-all to be Final (a non-Final catch-all only clones) and at least one enabled route above it, so a fresh group's lone Default route doesn't fire.
-- L03 counts Chain function (`conf.processor`) references and exempts shipped default and sample pipelines (provisional list, to confirm from the clean fixture). Collector jobs aren't read; the fix text says so.
+- L03 counts Chain function (`conf.processor`) references and exempts the 9 pipelines a fresh 4.20 group ships with (confirmed from the demo workspace before seeding: passthru, main, devnull, cribl_metrics_rollup, prometheus_metrics, cisco_asa, cisco_estreamer, palo_alto_traffic, wineventlogs). Collector jobs aren't read; the fix text says so.
 - L04 stands down entirely when any enabled route uses an output expression, and the Linter tab says why.
 - L07 checks eval assignments to secret-named fields with a quoted literal, `key=value` patterns, and known token formats (AWS, GitHub, Slack, Bearer, JWT). Candidates need letters plus digits to avoid matching field references. Evidence shows at most the first 4 characters.
 - L08 checks conf keys `regex`/`matchRegex` (including `regexList` and mask rules) for a leading `.*` or `.*?`, also inside opening groups.
