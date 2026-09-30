@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReferenceGraph } from '../model/graph';
-import { HEADER_H, NODE_H, NODE_W, PAD, type FlowLayout, type LayoutNode } from '../report/flowLayout';
+import { busFlow, HEADER_H, NODE_H, NODE_W, PAD, type FlowLayout, type LayoutNode } from '../report/flowLayout';
 
 interface Props {
   layout: FlowLayout;
@@ -24,7 +24,10 @@ function flowsThrough(node: LayoutNode, graph: ReferenceGraph): string[] {
     case 'route':
       return [node.id];
     case 'source':
-      return graph.flows.filter((f) => f.kind === 'quickconnect' && f.via === node.id).map((f) => f.via);
+      return [
+        busFlow(node.id),
+        ...graph.flows.filter((f) => f.kind === 'quickconnect' && f.via === node.id).map((f) => f.via),
+      ];
     case 'pipeline':
       return graph.flows.filter((f) => f.pipeline === node.id).map((f) => f.via);
     case 'destination':
@@ -33,19 +36,21 @@ function flowsThrough(node: LayoutNode, graph: ReferenceGraph): string[] {
 }
 
 export default function FlowDiagram({ layout, graph }: Props) {
-  const [hovered, setHovered] = useState<Set<string> | null>(null);
+  const [hover, setHover] = useState<{ key: string; flows: Set<string> } | null>(null);
+  const hovered = hover?.flows ?? null;
 
   const litNodes = useMemo(() => {
-    if (!hovered) return null;
-    const keys = new Set<string>();
+    if (!hover) return null;
+    // The hovered node stays lit even when no flow passes through it (an unreferenced object).
+    const keys = new Set<string>([hover.key]);
     for (const f of graph.flows) {
-      if (!hovered.has(f.via)) continue;
+      if (!hover.flows.has(f.via)) continue;
       keys.add(f.kind === 'route' ? `route:${f.via}` : `source:${f.via}`);
       keys.add(`pipeline:${f.pipeline}`);
       if (f.output) keys.add(`destination:${f.output}`);
     }
     return keys;
-  }, [hovered, graph]);
+  }, [hover, graph]);
 
   const edgeClass = (flows: string[], disabled: boolean, kind: string) => {
     const lit = hovered && flows.some((f) => hovered.has(f));
@@ -106,8 +111,8 @@ export default function FlowDiagram({ layout, graph }: Props) {
               key={n.key}
               className={cls}
               transform={`translate(${n.x},${n.y})`}
-              onMouseEnter={() => setHovered(new Set(flowsThrough(n, graph)))}
-              onMouseLeave={() => setHovered(null)}
+              onMouseEnter={() => setHover({ key: n.key, flows: new Set(flowsThrough(n, graph)) })}
+              onMouseLeave={() => setHover(null)}
             >
               <title>
                 {`${n.label}${n.sublabel ? ` — ${n.sublabel}` : ''}${n.disabled ? ' (disabled)' : ''}${n.unreferenced ? ' (not referenced)' : ''}${n.findingCount ? ` · ${n.findingCount} finding${n.findingCount === 1 ? '' : 's'} (see Linter)` : ''}`}

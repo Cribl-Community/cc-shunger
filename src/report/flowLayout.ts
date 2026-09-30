@@ -54,6 +54,9 @@ export interface FlowLayout {
   hiddenBuiltins: string[];
 }
 
+/** Hover flow id for a routed source's edge into the bus; prefixed so it can't collide with a route id. */
+export const busFlow = (sourceId: string) => `bus:${sourceId}`;
+
 const colX = (i: number) => PAD + i * (NODE_W + COL_GAP);
 const rowY = (i: number) => PAD + HEADER_H + i * (NODE_H + ROW_GAP);
 const mid = (n: LayoutNode) => n.y + NODE_H / 2;
@@ -178,7 +181,9 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Find
         from: { x: n.x + NODE_W, y: mid(n) },
         to: { x: bus.x, y },
         kind: 'bus',
-        flows: inv.routes.map((r) => r.id),
+        // Every routed source feeds every route, so tagging this edge with the route ids would light
+        // all source edges on any route hover. It lights only when its own source is hovered.
+        flows: [busFlow(s.id)],
         disabled: s.disabled,
       });
     }
