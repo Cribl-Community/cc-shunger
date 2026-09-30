@@ -110,7 +110,11 @@ export default function AsBuiltTab({ inventory, graph, findings, suppressed }: P
 
       <section className="section">
         <Text as="h2" variant="heading">Data flow</Text>
-        <Text>Hover a Route, Pipeline, or Destination to trace its path.</Text>
+        <Text>
+          Hover any Source, Route, Pipeline, or Destination to trace its path. Sources on the vertical Routing
+          table line are evaluated against Routes top to bottom; QuickConnect Sources (dashed) go straight to a
+          Pipeline.
+        </Text>
         <FlowDiagram layout={layout} graph={graph} />
         <div className="flow-legend">
           <span><span className="swatch swatch--error" /> Error</span>

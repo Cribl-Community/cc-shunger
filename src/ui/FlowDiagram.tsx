@@ -87,13 +87,19 @@ export default function FlowDiagram({ layout, graph }: Props) {
         ))}
 
         {layout.bus && (
-          <line
-            className={`flow-bus${hovered ? (busLit ? ' is-lit' : ' is-faded') : ''}`}
-            x1={layout.bus.x}
-            x2={layout.bus.x}
-            y1={layout.bus.y1}
-            y2={layout.bus.y2}
-          />
+          <g className={`flow-bus-group${hovered ? (busLit ? ' is-lit' : ' is-faded') : ''}`}>
+            <title>
+              Routing table: events from these Sources are checked against Routes in order; the first matching
+              Final Route stops evaluation.
+            </title>
+            {/* Right-aligned in the header row so it clears both column titles. */}
+            <text className="flow-bus-label" x={layout.bus.x + 4} y={PAD + HEADER_H / 2} textAnchor="end">
+              Routing table
+            </text>
+            <line className="flow-bus" x1={layout.bus.x} x2={layout.bus.x} y1={layout.bus.y1} y2={layout.bus.y2} />
+            {/* Wider invisible stroke so the 3px line is easy to hover for the tooltip. */}
+            <line className="flow-bus-hit" x1={layout.bus.x} x2={layout.bus.x} y1={layout.bus.y1} y2={layout.bus.y2} />
+          </g>
         )}
 
         {layout.edges.map((e) => (

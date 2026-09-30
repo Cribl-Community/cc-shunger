@@ -78,13 +78,19 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Find
     return node;
   };
 
-  // Sources: routed ones first (they share the bus), then QuickConnect, then disabled.
+  // Sources: routed ones first, enabled before disabled, so the bus spans one contiguous block;
+  // QuickConnect sources sit below it so the bus never passes one it isn't connected to.
   const sources = [...inv.sources].sort(
     (a, b) =>
-      Number(a.disabled) - Number(b.disabled) ||
       Number(!a.sendToRoutes) - Number(!b.sendToRoutes) ||
+      Number(a.disabled) - Number(b.disabled) ||
       a.id.localeCompare(b.id),
   );
+  // QuickConnect sources start below the bus, which reaches the lower of the last routed source and
+  // the last route, so a short source list beside a long Routing table doesn't put one on the bus.
+  const routedCount = sources.filter((s) => s.sendToRoutes).length;
+  const qcStart = inv.routes.length ? Math.max(routedCount, inv.routes.length) : routedCount;
+  const sourceRow = (i: number) => (i < routedCount ? i : qcStart + i - routedCount);
   sources.forEach((s, i) =>
     add(
       {
@@ -97,7 +103,7 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Find
         unreferenced: false,
       },
       0,
-      i,
+      sourceRow(i),
     ),
   );
 
@@ -242,7 +248,8 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Find
     }
   }
 
-  const rows = Math.max(sources.length, inv.routes.length, pipelineIds.length, destIds.length, 1);
+  const sourceRows = sources.length ? sourceRow(sources.length - 1) + 1 : 0;
+  const rows = Math.max(sourceRows, inv.routes.length, pipelineIds.length, destIds.length, 1);
   return {
     width: colX(3) + NODE_W + PAD,
     height: rowY(rows) + PAD,

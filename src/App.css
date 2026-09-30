@@ -139,12 +139,28 @@
   stroke-width: 2.5;
 }
 
-.flow-bus.is-lit {
+.flow-bus-group.is-lit .flow-bus {
   stroke: token('color.border.accent.strong');
 }
 
+.flow-bus-group {
+  transition: opacity 120ms ease;
+}
+
+.flow-bus-label {
+  font: token('typography.body.xs.normal');
+  fill: token('color.foreground.subtle');
+  dominant-baseline: middle;
+}
+
+.flow-bus-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+
 .flow-edge.is-faded,
-.flow-bus.is-faded,
+.flow-bus-group.is-faded,
 .flow-node.is-faded {
   opacity: 0.25;
 }

@@ -61,6 +61,16 @@ describe('layoutFlow', () => {
     expect(layout.edges.find((e) => e.key === 'pair:passthru->default')?.flows).toEqual(['r1']);
   });
 
+  it('runs source edges straight into the bus and keeps QuickConnect sources off it', () => {
+    const inv = normalize(demoRaw()); // 3 routed sources beside 6 routes
+    const { edges, nodes, bus } = layoutFlow(inv, buildGraph(inv));
+    const busEdges = edges.filter((e) => e.key.startsWith('bus:'));
+    expect(busEdges.length).toBeGreaterThan(0);
+    for (const e of busEdges) expect(e.to.y).toBe(e.from.y);
+    const qc = nodes.find((n) => n.id === 'gen_metrics_qc')!;
+    expect(qc.y).toBeGreaterThan(bus!.y2);
+  });
+
   it('marks unreferenced pipelines and destinations', () => {
     const unref = layout.nodes.filter((n) => n.unreferenced).map((n) => n.key);
     expect(unref).toEqual(['pipeline:unused']);
