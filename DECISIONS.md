@@ -75,7 +75,7 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - Worker Groups come from `GET /master/groups?product=stream&fields=git.localChanges`. The same call returns the uncommitted-change count for the banner, so `/version/status` isn't needed.
 - Groups are filtered to `type === "stream"`, or `!isFleet && !isSearch` on older Leaders. Edge and Search are out of scope.
 - `config/policies.yml` declares only the GET paths the app calls. `/system/info` was removed after Phase 0.
-- **License question:** Capra (`@capra/*`) is bundled into the UI but is under the proprietary Cribl Developer Agreement, not an OSI license. AGENTS.md mandates Capra, and other Apache-2.0 Cribl-Community apps (e.g. cc-pixel-open, cc-visicore-spl-to-kql) bundle it too. Steve to confirm with hackathon organizers; the fallback is a plain-React UI.
+- **License question:** Capra (`@capra/*`) is bundled into the UI but is under the proprietary Cribl Developer Agreement, not an OSI license. AGENTS.md mandates Capra, and other Apache-2.0 Cribl-Community apps (e.g. cc-pixel-open, cc-visicore-spl-to-kql) bundle it too. Decision (Steve, 2026-09-29): accepted as compatible without asking the organizers, since Cribl's scaffold mandates Capra and other Apache-2.0 Cribl-Community apps bundle it the same way. It's disclosed in README and CREDITS.md. If an organizer objects, the fallback is a plain-React UI (about half a day).
 - Production bundle is ~1 MB (Capra plus illustrations). Acceptable; the archive limit is 100 MB.
 - `build/` (the packaged `.tgz`) is git-ignored; releases attach it.
 
