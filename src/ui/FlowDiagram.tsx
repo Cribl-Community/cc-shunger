@@ -19,15 +19,20 @@ const ROW_CHARS = 30;
 const SUB_MAX = 12;
 
 /** Flow ids (route ids, QuickConnect source ids) that pass through a node. */
-function flowsThrough(node: LayoutNode, graph: ReferenceGraph): string[] {
+function flowsThrough(node: LayoutNode, layout: FlowLayout, graph: ReferenceGraph): string[] {
   switch (node.column) {
     case 'route':
       return [node.id];
-    case 'source':
+    case 'source': {
+      // A routed source's data reaches every route through the bus; a disabled one sends nothing.
+      const routed = layout.edges.some((e) => e.flows.includes(busFlow(node.id)));
+      const routes = routed && !node.disabled ? layout.nodes.filter((n) => n.column === 'route').map((n) => n.id) : [];
       return [
-        busFlow(node.id),
+        ...(routed ? [busFlow(node.id)] : []),
+        ...routes,
         ...graph.flows.filter((f) => f.kind === 'quickconnect' && f.via === node.id).map((f) => f.via),
       ];
+    }
     case 'pipeline':
       return graph.flows.filter((f) => f.pipeline === node.id).map((f) => f.via);
     case 'destination':
@@ -38,6 +43,7 @@ function flowsThrough(node: LayoutNode, graph: ReferenceGraph): string[] {
 export default function FlowDiagram({ layout, graph }: Props) {
   const [hover, setHover] = useState<{ key: string; flows: Set<string> } | null>(null);
   const hovered = hover?.flows ?? null;
+  const busLit = !!hovered && [...hovered].some((f) => f.startsWith(busFlow('')));
 
   const litNodes = useMemo(() => {
     if (!hover) return null;
@@ -82,7 +88,7 @@ export default function FlowDiagram({ layout, graph }: Props) {
 
         {layout.bus && (
           <line
-            className={`flow-bus${hovered ? ' is-faded' : ''}`}
+            className={`flow-bus${hovered ? (busLit ? ' is-lit' : ' is-faded') : ''}`}
             x1={layout.bus.x}
             x2={layout.bus.x}
             y1={layout.bus.y1}
@@ -111,7 +117,7 @@ export default function FlowDiagram({ layout, graph }: Props) {
               key={n.key}
               className={cls}
               transform={`translate(${n.x},${n.y})`}
-              onMouseEnter={() => setHover({ key: n.key, flows: new Set(flowsThrough(n, graph)) })}
+              onMouseEnter={() => setHover({ key: n.key, flows: new Set(flowsThrough(n, layout, graph)) })}
               onMouseLeave={() => setHover(null)}
             >
               <title>

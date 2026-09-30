@@ -139,6 +139,10 @@
   stroke-width: 2.5;
 }
 
+.flow-bus.is-lit {
+  stroke: token('color.border.accent.strong');
+}
+
 .flow-edge.is-faded,
 .flow-bus.is-faded,
 .flow-node.is-faded {

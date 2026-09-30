@@ -168,18 +168,23 @@ export function layoutFlow(inv: Inventory, graph: ReferenceGraph, findings: Find
   const edges: LayoutEdge[] = [];
   const routeNodes = nodes.filter((n) => n.column === 'route');
   const busX = colX(1) - COL_GAP / 3;
+  // The bus spans every routed source as well as every route, so each source edge runs straight
+  // across instead of bending to the bus end (which fanned many curves into one point).
+  const busRows = [
+    ...routeNodes,
+    ...sources.filter((s) => s.sendToRoutes).map((s) => index.get(`source:${s.id}`)!),
+  ].map(mid);
   const bus = routeNodes.length
-    ? { x: busX, y1: mid(routeNodes[0]), y2: mid(routeNodes[routeNodes.length - 1]) }
+    ? { x: busX, y1: Math.min(...busRows), y2: Math.max(...busRows) }
     : undefined;
 
   if (bus) {
     for (const s of sources.filter((s) => s.sendToRoutes)) {
       const n = index.get(`source:${s.id}`)!;
-      const y = Math.min(Math.max(mid(n), bus.y1), bus.y2);
       edges.push({
         key: `bus:${s.id}`,
         from: { x: n.x + NODE_W, y: mid(n) },
-        to: { x: bus.x, y },
+        to: { x: bus.x, y: mid(n) },
         kind: 'bus',
         // Every routed source feeds every route, so tagging this edge with the route ids would light
         // all source edges on any route hover. It lights only when its own source is hovered.
