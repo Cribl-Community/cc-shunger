@@ -85,3 +85,4 @@ One line per non-obvious choice. Sources: [Apps docs](https://docs.cribl.io/apps
 - In-app confirmations use an inline two-step button, not `window.confirm`, since the iframe sandbox attributes are undocumented.
 - `openapi.json` (9.9 MB, workspace-generated) is git-ignored; regenerate via the scaffold command.
 - `npm audit`: 2 moderate advisories in esbuild ≤0.24 nested under `@cribl/apps` (dev-server only, no upstream fix). Accepted.
+- App ID is `cc-shunger`, not `cc-blueprint`: Cribl-Community assigned the repo name, and the release workflow uploads to the dispensary under the repo name. Display name stays "Cribl Blueprint". An install under the new ID has its own empty KV store.

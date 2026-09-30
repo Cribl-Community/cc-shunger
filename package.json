@@ -1,14 +1,14 @@
 {
-  "name": "cc-blueprint",
+  "name": "cc-shunger",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && apps build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "package": "apps package",
+    "package": "npm run build && node scripts/package.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -34,7 +34,7 @@
   },
   "displayName": "Cribl Blueprint",
   "description": "As-built documentation, risk linting, and snapshot diffs for Cribl Stream Worker Groups.",
-  "author": "Steve Hunger <shunger@presidio.com>",
+  "author": "Steve Hunger - shunger@presidio.com",
   "minLogStreamVersion": "4.18.0",
   "cribl": {
     "type": "app",
